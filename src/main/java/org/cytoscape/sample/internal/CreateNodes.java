@@ -2,6 +2,7 @@ package org.cytoscape.sample.internal;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyRow;
 
 import java.util.*;
 
@@ -162,8 +163,14 @@ public class CreateNodes {
 
         for (CyNode currentNode : allNodes) {
             // from ID we can get 'M' + 'exchg'
-            String[] idParts = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml id", String.class).split("_");
+            // Change to retrieval of compartment from compartment field, not sbml id
+            long suid = currentNode.getSUID();
+            CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
+            String sbml_id = node_row.get("sbml id", String.class);
+            if (sbml_id == null) {sbml_id = new String("null");}
+            String[] idParts = sbml_id.split("_");
             if (idParts.length == 3 && Objects.equals(idParts[2], "exchg")) {exchangeNode.add(currentNode);}
+            else {System.out.println("Hello World!");}
         }
         this.exchgNodes = exchangeNode;
     }
