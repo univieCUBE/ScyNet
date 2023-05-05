@@ -166,11 +166,10 @@ public class CreateNodes {
             // Change to retrieval of compartment from compartment field, not sbml id
             long suid = currentNode.getSUID();
             CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
-            String sbml_id = node_row.get("sbml id", String.class);
-            if (sbml_id == null) {sbml_id = new String("null");}
-            String[] idParts = sbml_id.split("_");
-            if (idParts.length == 3 && Objects.equals(idParts[2], "exchg")) {exchangeNode.add(currentNode);}
-            else {System.out.println("Hello World!");}
+            String compartment = node_row.get("sbml compartment", String.class);
+            //if (sbml_id == null) {sbml_id = new String("null");}
+            //String[] idParts = sbml_id.split("_");
+            if (Objects.equals(compartment, "exchg")) {exchangeNode.add(currentNode);}
         }
         this.exchgNodes = exchangeNode;
     }
