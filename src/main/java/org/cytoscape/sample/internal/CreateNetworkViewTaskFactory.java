@@ -7,6 +7,7 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
 
@@ -56,6 +57,7 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	 * The toggle-button for 'crossfeeding'
 	 */
 	private final JToggleButton myButton;
+	private final CyApplicationManager cyApplicationManager;
 
 	/**
 	 * Constructs a new CreateNetworkViewTaskFactory with the given parameters.
@@ -65,19 +67,20 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	 * @param cnvf the factory for creating network views
 	 * @param networkViewManager the manager for network views in Cytoscape
 	 * @param dataSourceManager the manager for data sources in Cytoscape
-	 * @param currentNetwork the current network in Cytoscape
+	 * @param cyApplicationManager the manager for applications in Cytoscape
 	 * @param myButton the toggle button to display the network view in the app
 	 */
 	public CreateNetworkViewTaskFactory(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
 										CyNetworkViewFactory cnvf, CyNetworkViewManager networkViewManager, DataSourceManager dataSourceManager,
-										CyNetwork currentNetwork, JToggleButton myButton) {
+										CyApplicationManager cyApplicationManager, JToggleButton myButton) {
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
 		this.networkManager = networkManager;
 		this.cyNetworkNaming = cyNetworkNaming;
 		this.dataSourceManager = dataSourceManager;
-		this.currentNetwork = currentNetwork;
+		this.currentNetwork = cyApplicationManager.getCurrentNetwork();
+		this.cyApplicationManager = cyApplicationManager;
 		this.showOnlyCrossfeeding = false;
 		this.myButton = myButton;
 
@@ -100,7 +103,7 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	public TaskIterator createTaskIterator() {
 		FileChoosing newChooser = new FileChoosing();
 		HashMap<String, Double> tsvMap = newChooser.makeMap();
-		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, dataSourceManager, currentNetwork, tsvMap, showOnlyCrossfeeding));
+		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, dataSourceManager, currentNetwork, tsvMap, showOnlyCrossfeeding, cyApplicationManager));
 	}
 
 	/**

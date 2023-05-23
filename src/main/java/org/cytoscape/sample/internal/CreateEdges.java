@@ -45,6 +45,10 @@ public class CreateEdges {
      */
     private final List<CyNode> oldExternalNodes;
     /**
+     * List of the old reaction nodes with metabolites in the exchg compartment
+     */
+    private final List<CyNode> oldExchgReactionNodes;
+    /**
      * TSV-map created from the TSV-file with fluxes, if it was added
      */
     private final HashMap<String, Double> tsvMap;
@@ -73,6 +77,7 @@ public class CreateEdges {
         this.createNodes = createNodes;
         this.cyNodeList = oldNetwork.getNodeList();
         this.oldExternalNodes = createNodes.getExtNodes();
+        this.oldExchgReactionNodes = createNodes.getExchgReactions();
         this.outgoingEdges = mkMapOfOutEdges();
         this.incomingEdges = mkMapOfInEdges();
         makeFluxMap();
@@ -89,10 +94,89 @@ public class CreateEdges {
         newNetwork.getDefaultEdgeTable().createColumn("source", String.class, true);
         newNetwork.getDefaultEdgeTable().createColumn("target", String.class, true);
         newNetwork.getDefaultEdgeTable().createColumn("edgeID", String.class, true);
+        newNetwork.getDefaultEdgeTable().createColumn("sbml id", String.class, true);
         newNetwork.getDefaultEdgeTable().createColumn("flux", Double.class, true);
         newNetwork.getDefaultEdgeTable().createColumn("stoichiometry", Double.class, true);
-        makeEdgesToNode();
-        makeEdgesFromNode();
+        makeEdgesOfReactions();
+        //makeEdgesToNode();
+        //makeEdgesFromNode();
+    }
+
+    /**
+     * This method creates an edge for each of the exchange reactions' metabolites. The edge is directed to a
+     * compartment of the metabolite, if the metabolite is not in the exchg compartment.
+     */
+    private void makeEdgesOfReactions() {
+        // here we loop through all external Nodes and get their Sources, using these we make edges the external Nodes
+        // or compartment Nodes if the Source is in a compartment
+
+        for (CyNode oldExchgRxnNode : oldExchgReactionNodes) {
+
+            List<CyNode> oldSources = getAllNeighbors(oldExchgRxnNode, "Sources");
+            List<CyNode> oldTargets = getAllNeighbors(oldExchgRxnNode, "Targets");
+            List<CyNode> oldNeighbors = createNodes.getAllNeighbors(oldExchgRxnNode);
+            HashMap<String, List<CyNode>> neighborMap = getAllReactionNeighbors(oldExchgRxnNode);
+            Set<CyNode> sourcesVisited = new HashSet<>();
+            Set<CyNode> targetsVisited = new HashSet<>();
+            //It could be that in the All: model the metabolites of reactions are always targets
+            //Check if true, then check if also true in Base: model.
+
+            List<CyNode> reactants = neighborMap.get("reactants");
+            List<CyNode> products = neighborMap.get("products");
+
+            for (CyNode reactant : reactants) {
+                // Is it internal or external? (is compartment exchg?)
+                String sbmlTypeSource = createNodes.getSbmlTypeFromNode(reactant);
+                // Skip non metabolite nodes
+                if (!Objects.equals(sbmlTypeSource, "species")) {continue;}
+
+                String organismSource = createNodes.getOrganismFromNode(reactant);
+                CyNode compSource = createNodes.getCompNodeFromName(organismSource);
+                CyNode sourceMetNode;
+                if (Objects.equals(organismSource, "exchg")) {
+                    sourceMetNode = createNodes.getNewNode(reactant);
+                }
+                else {
+                    sourceMetNode = compSource;
+                }
+
+                if (sourcesVisited.contains(sourceMetNode)) {continue;}
+
+                //Iterate over all targets of the reaction
+                for (CyNode product : products) {
+                    // Is it internal or external? (is compartment exchg?)
+                    String sbmlTypeTarget = createNodes.getSbmlTypeFromNode(product);
+                    // Skip non metabolite nodes
+                    if (!Objects.equals(sbmlTypeTarget, "species")) {
+                        continue;
+                    }
+
+                    String organismTarget = createNodes.getOrganismFromNode(product);
+                    CyNode compTarget = createNodes.getCompNodeFromName(organismTarget);
+                    CyNode targetMetNode;
+                    if (Objects.equals(organismTarget, "exchg")) {
+                        targetMetNode = createNodes.getNewNode(product);
+                    } else {
+                        targetMetNode = compTarget;
+                    }
+                    if (!targetsVisited.contains(targetMetNode)) {
+                        List<CyEdge> oldEdges = oldNetwork.getConnectingEdgeList(reactant, product, CyEdge.Type.ANY);
+                        double stoichiometry = 0.0d;
+                        for (CyEdge oldEdge : oldEdges) {
+                            Double stoich = oldNetwork.getDefaultEdgeTable().getRow(oldEdge.getSUID()).get("stoichiometry", Double.class);
+                            if (stoich != null) {
+                                stoichiometry += stoich;
+                            }
+                        }
+
+                        CyEdge edge = makeEdge(sourceMetNode, targetMetNode);
+                        edgeTributesReaction(edge, sourceMetNode, targetMetNode, oldExchgRxnNode, stoichiometry);
+                        targetsVisited.add(targetMetNode);
+                    }
+                }
+                sourcesVisited.add(sourceMetNode);
+            }
+        }
     }
 
     /**
@@ -117,7 +201,8 @@ public class CreateEdges {
                     edgeTributes(edge, oSource, oldExchgNode);
                 } else {
 
-                    CyNode comp = createNodes.getIntCompNodeForAnyNode(oSource);
+                    String organism = createNodes.getOrganismFromNode(oSource);
+                    CyNode comp = createNodes.getCompNodeFromName(organism);
                     CyEdge edge = makeEdge(comp, createNodes.getNewNode(oldExchgNode));
                     edgeTributesComp(edge, oSource, oldExchgNode, true);
 
@@ -137,7 +222,8 @@ public class CreateEdges {
             List<CyNode> oldTargets = getAllNeighbors(oldExchgNode, "Targets");
             for (CyNode oTarget : oldTargets) {
 
-                CyNode comp = createNodes.getIntCompNodeForAnyNode(oTarget);
+                String organism = createNodes.getOrganismFromNode(oTarget);
+                CyNode comp = createNodes.getCompNodeFromName(organism);
 
                 CyEdge edge = makeEdge(createNodes.getNewNode(oldExchgNode), comp);
                 edgeTributesComp(edge, oldExchgNode, oTarget, false);
@@ -176,6 +262,72 @@ public class CreateEdges {
     /**
      * Returns a list of all neighbors of the given node in the given direction.
      *
+     * @param oldReactionNode the node to get the neighbors of
+     * @return a hashmap of reactants and products (as list of nodes)
+     */
+    private HashMap<String, List<CyNode>> getAllReactionNeighbors (CyNode oldReactionNode){
+
+        HashMap<String, List<CyNode>> oldNeighbors = new HashMap<>();
+        List<CyNode> reactants = new ArrayList<CyNode>();
+        List<CyNode> products = new ArrayList<CyNode>();
+
+        List<CyEdge> edges = oldNetwork.getAdjacentEdgeList(oldReactionNode, CyEdge.Type.INCOMING);
+        for (CyEdge edge : edges) {
+            String edgeType = oldNetwork.getDefaultEdgeTable().getRow(edge.getSUID()).get("interaction type", String.class);
+            if (Objects.equals(edgeType, "reaction-reactant")) {
+                CyNode node = edge.getSource();
+                String nodeName = createNodes.getNodeSharedName(node);
+                reactants.add(edge.getSource());
+            } else if (Objects.equals(edgeType, "reaction-product")) {
+                CyNode node = edge.getSource();
+                String nodeName = createNodes.getNodeSharedName(node);
+                products.add(edge.getSource());
+            }
+        }
+
+        edges = oldNetwork.getAdjacentEdgeList(oldReactionNode, CyEdge.Type.OUTGOING);
+        for (CyEdge edge : edges) {
+            String edgeType = oldNetwork.getDefaultEdgeTable().getRow(edge.getSUID()).get("interaction type", String.class);
+            if (Objects.equals(edgeType, "reaction-reactant")) {
+                CyNode node = edge.getTarget();
+                String nodeName = createNodes.getNodeSharedName(node);
+                reactants.add(edge.getTarget());
+            } else if (Objects.equals(edgeType, "reaction-product")) {
+                CyNode node = edge.getTarget();
+                String nodeName = createNodes.getNodeSharedName(node);
+                products.add(edge.getTarget());
+            }
+        }
+
+        edges = oldNetwork.getAdjacentEdgeList(oldReactionNode, CyEdge.Type.UNDIRECTED);
+        for (CyEdge edge : edges) {
+            String edgeType = oldNetwork.getDefaultEdgeTable().getRow(edge.getSUID()).get("interaction type", String.class);
+            if (Objects.equals(edgeType, "reaction-reactant")) {
+                CyNode node = edge.getTarget();
+                if (Objects.equals(oldReactionNode, node)) {
+                    node = edge.getSource();
+                }
+                String nodeName = createNodes.getNodeSharedName(node);
+                reactants.add(edge.getTarget());
+            } else if (Objects.equals(edgeType, "reaction-product")) {
+                CyNode node = edge.getTarget();
+                if (Objects.equals(oldReactionNode, node)) {
+                    node = edge.getSource();
+                }
+                String nodeName = createNodes.getNodeSharedName(node);
+                products.add(edge.getTarget());
+            }
+        }
+
+        oldNeighbors.put("reactants", reactants);
+        oldNeighbors.put("products", products);
+
+        return oldNeighbors;
+    }
+
+    /**
+     * Returns a list of all neighbors of the given node in the given direction.
+     *
      * @param oldExchgNode the node to get the neighbors of
      * @param direction the direction in which to get the neighbors ("Sources" or "Targets")
      * @return a list of all neighbors of the given node in the given direction
@@ -185,12 +337,12 @@ public class CreateEdges {
         List<CyNode> oldNeighbors = new ArrayList<>();
 
         if (Objects.equals(direction, "Sources")) {
-            List<CyEdge> edges = incomingEdges.get(oldExchgNode);
+            List<CyEdge> edges = oldNetwork.getAdjacentEdgeList(oldExchgNode, CyEdge.Type.INCOMING);
             for (CyEdge edge : edges) {
                 oldNeighbors.add(edge.getSource());
             }
         } else {
-            List<CyEdge> edges = outgoingEdges.get(oldExchgNode);
+            List<CyEdge> edges = oldNetwork.getAdjacentEdgeList(oldExchgNode, CyEdge.Type.OUTGOING);
             for (CyEdge edge : edges) {
                 oldNeighbors.add(edge.getTarget());
             }
@@ -305,6 +457,36 @@ public class CreateEdges {
     }
 
     /**
+     * Adds attributes of an edge to its entry in the edge-table (external Node to comp Node).
+     *
+     * @param currentEdge The edge whose attributes are to be added.
+     * @param newSource The old source node of the edge.
+     * @param newTarget The old target node of the edge.
+     * @param reaction The old node of the reaction.
+     * @param stoich A double containing the stoichiometry of the reaction from the source to target
+     */
+    private void edgeTributesReaction (CyEdge currentEdge, CyNode newSource, CyNode newTarget, CyNode reaction, double stoich){
+        // here all the attributes of an Edge are added to its entry in the edge-table (external Node to comp Node)
+        String sourceName = newNetwork.getDefaultNodeTable().getRow(newSource.getSUID()).get("shared name", String.class);
+        String targetName = newNetwork.getDefaultNodeTable().getRow(newTarget.getSUID()).get("shared name", String.class);
+        String sharedName = oldNetwork.getDefaultNodeTable().getRow(reaction.getSUID()).get("shared name", String.class);
+        String sbmlId = oldNetwork.getDefaultNodeTable().getRow(reaction.getSUID()).get("sbml id", String.class).replaceFirst("^R_", "");
+        String fluxKey = sbmlId;
+        Double fluxValue = getFlux(fluxKey);
+        if(mapAdded) {
+            setFlux(newTarget, fluxValue);
+        }
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("source", sourceName);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("target", targetName);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("shared name", sharedName);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("shared interaction", "EXPORT");
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("flux", fluxValue);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("name", fluxKey);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("sbml id", sbmlId);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("stoichiometry", stoich);
+    }
+
+    /**
      * Creates a hashmap to determine whether the nodes in the new network have flux or not, with a default value of 0.0.
      */
     private void makeFluxMap(){
@@ -319,11 +501,10 @@ public class CreateEdges {
      * Sets the flux value for a given node in the nodeFluxes hashmap. If the flux value is not 0.0,
      * adds the absolute value of the flux to the current flux value for the node in the hashmap.
      *
-     * @param oldNode the old node for which to set the flux value
+     * @param newNode the new node for which to set the flux value
      * @param fluxValue the new flux value to set for the node
      */
-    private void setFlux(CyNode oldNode, Double fluxValue){
-        CyNode newNode = createNodes.getNewNode(oldNode);
+    private void setFlux(CyNode newNode, Double fluxValue){
         if (!fluxValue.equals(0.0)){
             Double newFlux = nodeFluxes.get(newNode) + Math.abs(fluxValue);
             nodeFluxes.put(newNode,newFlux);

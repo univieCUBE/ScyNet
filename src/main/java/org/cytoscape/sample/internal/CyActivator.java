@@ -27,6 +27,7 @@ import java.awt.event.ActionListener;
 import java.util.Properties;
 import java.util.Set;
 
+import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
 
 
 /**
@@ -54,6 +55,7 @@ public class CyActivator extends AbstractCyActivator {
 		CyNetworkNaming cyNetworkNamingServiceRef = getService(bc,CyNetworkNaming.class);
 		CyNetworkFactory cyNetworkFactoryServiceRef = getService(bc,CyNetworkFactory.class);
 		CyNetworkManager cyNetworkManagerServiceRef = getService(bc,CyNetworkManager.class);
+		CyApplicationManager cyApplicationManager = getService(bc, CyApplicationManager.class);
 		CyNetworkViewFactory cyNetworkViewFactoryServiceRef = getService(bc,CyNetworkViewFactory.class);
 		CyNetworkViewManager cyNetworkViewManagerServiceRef = getService(bc,CyNetworkViewManager.class);
 
@@ -67,13 +69,17 @@ public class CyActivator extends AbstractCyActivator {
 
 		// Get all the networks and create a network view task factory for each network
 		Set<CyNetwork> allNetworks = cyNetworkManagerServiceRef.getNetworkSet();
-		for (CyNetwork currentNetwork : allNetworks) {
-			CreateNetworkViewTaskFactory createNetworkViewTaskFactory = new CreateNetworkViewTaskFactory(cyNetworkNamingServiceRef, cyNetworkFactoryServiceRef,cyNetworkManagerServiceRef, cyNetworkViewFactoryServiceRef, cyNetworkViewManagerServiceRef, dataSourceManager, currentNetwork, myButton);
-			myButton = createNetworkViewTaskFactory.getButton();
-			String currentName = currentNetwork.getDefaultNetworkTable().getRow(currentNetwork.getSUID()).get("name", String.class);
-			createNetworkViewTaskFactoryProps.setProperty("title", currentName);
-			registerService(bc,createNetworkViewTaskFactory,TaskFactory.class, createNetworkViewTaskFactoryProps);
-		}
+//		for (CyNetwork currentNetwork : allNetworks) {
+//			CreateNetworkViewTaskFactory createNetworkViewTaskFactory = new CreateNetworkViewTaskFactory(cyNetworkNamingServiceRef, cyNetworkFactoryServiceRef, cyNetworkManagerServiceRef, cyNetworkViewFactoryServiceRef, cyNetworkViewManagerServiceRef, dataSourceManager, cyApplicationManager, myButton);
+//			myButton = createNetworkViewTaskFactory.getButton();
+//			String currentName = currentNetwork.getDefaultNetworkTable().getRow(currentNetwork.getSUID()).get("name", String.class);
+//			createNetworkViewTaskFactoryProps.setProperty("title", currentName);
+//			registerService(bc, createNetworkViewTaskFactory, TaskFactory.class, createNetworkViewTaskFactoryProps);
+//		}
+		CreateNetworkViewTaskFactory createNetworkViewTaskFactory = new CreateNetworkViewTaskFactory(cyNetworkNamingServiceRef, cyNetworkFactoryServiceRef, cyNetworkManagerServiceRef, cyNetworkViewFactoryServiceRef, cyNetworkViewManagerServiceRef, dataSourceManager, cyApplicationManager, myButton);
+		myButton = createNetworkViewTaskFactory.getButton();
+		createNetworkViewTaskFactoryProps.setProperty("title", "Create Simplified Community Network");
+		registerService(bc, createNetworkViewTaskFactory, TaskFactory.class, createNetworkViewTaskFactoryProps);
 
 		// Add the JToggleButton to the JFrame and make it visible
 		myFrame.add(myButton);
@@ -88,6 +94,7 @@ public class CyActivator extends AbstractCyActivator {
 					myFrame.setVisible(false);
 				}
 			}
-		});
+		}
+		);
 	}
 }

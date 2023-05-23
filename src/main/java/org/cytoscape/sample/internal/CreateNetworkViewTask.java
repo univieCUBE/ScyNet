@@ -1,6 +1,7 @@
 package org.cytoscape.sample.internal;
 
 
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.io.datasource.DataSourceManager;
 import org.cytoscape.model.*;
 import org.cytoscape.session.CyNetworkNaming;
@@ -69,14 +70,14 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 */
 	public CreateNetworkViewTask(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
 								 CyNetworkViewFactory cnvf, final CyNetworkViewManager networkViewManager,
-								 final DataSourceManager dataSourceManager, CyNetwork currentNetwork, HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding) {
+								 final DataSourceManager dataSourceManager, CyNetwork currentNetwork, HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager) {
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
 		this.networkManager = networkManager;
 		this.cyNetworkNaming = cyNetworkNaming;
 		this.dataSourceManager = dataSourceManager;
-		this.currentNetwork = currentNetwork;
+		this.currentNetwork = cyApplicationManager.getCurrentNetwork();
 		this.tsvMap = tsvMap;
 		this.showOnlyCrossfeeding = showOnlyCrossfeeding;
 	}

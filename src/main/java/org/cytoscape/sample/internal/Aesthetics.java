@@ -6,6 +6,7 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
 
 import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
@@ -36,7 +37,7 @@ public class Aesthetics {
     /**
      * A List of all compartment names
      */
-    private final List<String> compList;
+    private final Set<String> compList;
     /**
      * Flux-Map translated from the TSV-Map
      */
@@ -60,7 +61,7 @@ public class Aesthetics {
         this.nodes = nodes;
         this.newNetwork = newNetwork;
         this.newView = newView;
-        this.compList = nodes.getIntComps();
+        this.compList = nodes.getOrganisms();
         this.fluxMap = fluxMap;
         this.tsvMap = tsvMap;
         compNodes();
@@ -70,17 +71,20 @@ public class Aesthetics {
         if (showOnlyCrossfeeding) {
             removeNonCFNodes();
         }
+        removeSingletons();
     }
     /**
      * Modifies the appearance of the compartment nodes in the network view.
      */
     private void compNodes() {
         // Here we change the appearance of the Compartment Nodes
-        ListIterator<String> compListIterator = compList.listIterator();
+        Iterator<String> compListIterator = compList.iterator();
         Color[] equidistantColors = getEquidistantColors(compList.size());
+        int idx = 0;
         while (compListIterator.hasNext()) {
             String compartment = compListIterator.next();
-            int idx = compListIterator.nextIndex();
+            idx++;
+            // Here
             View<CyNode> compNodeView = newView.getNodeView(nodes.getCompNodeFromName(compartment));
             if (compNodeView == null) {
                 continue;
@@ -94,6 +98,7 @@ public class Aesthetics {
             compNodeView.setLockedValue(BasicVisualLexicon.NODE_SIZE, compNodeSize);
             compNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL, compNodeName);
             compNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ELLIPSE);
         }
     }
     /**
@@ -109,7 +114,17 @@ public class Aesthetics {
                 continue;
             }
             String exchgNodeName = newNetwork.getDefaultNodeTable().getRow(nodes.getNewNode(exchgNode).getSUID()).get("shared name", String.class);
+            Paint exchgNodeColor = Color.getHSBColor(0.05f, 0.61f, 0.94f);
+            double exchgNodeWidth = 120.0d;
+            double exchgNodeHeight = 55.0d;
+            int size = 22;
+
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, exchgNodeColor);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_WIDTH, exchgNodeWidth);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_HEIGHT, exchgNodeHeight);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL, exchgNodeName);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ELLIPSE);
             if (!tsvMap.isEmpty() && fluxMap.get(newNode).equals(0.0d)){
                 newNetwork.removeNodes(Collections.singletonList(newNode));
                 // exchgNodeView.setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
@@ -131,9 +146,9 @@ public class Aesthetics {
                 // Color of the Edges is selected based on Fluxes
                 Paint edgeColor;
                 if (edgeFlux >= 0.0d) {
-                    edgeColor = new ColorUIResource(Color.blue);
+                    edgeColor = Color.getHSBColor(220.0f/360.0f, 0.61f, 0.94f);
                 } else {
-                    edgeColor = new ColorUIResource(Color.green);
+                    edgeColor = Color.getHSBColor(90.0f/360.0f, 0.61f, 0.94f);
                 }
                 edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
 
@@ -146,13 +161,28 @@ public class Aesthetics {
             } else {
                 // Otherwise we just chose the Color based on their direction
                 if (compList.contains(edgeSourceName)) {
-                    Paint edgeColor = new ColorUIResource(Color.blue);
+                    Paint edgeColor = Color.getHSBColor(220.0f/360.0f, 0.61f, 0.94f);
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                 }
                 if (compList.contains(edgeTargetName)) {
-                    Paint edgeColor = new ColorUIResource(Color.green);
+                    Paint edgeColor = Color.getHSBColor(90.0f/360.0f, 0.61f, 0.94f);
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                 }
+            }
+        }
+    }
+
+    /**
+     * Identifies and removes all nodes that do not have crossfeeding.
+     */
+    private void removeSingletons() {
+
+        List<CyNode> allNodes = newNetwork.getNodeList();
+        for (CyNode node : allNodes) {
+            List<CyEdge> adjacentEdgeList = newNetwork.getAdjacentEdgeList(node, CyEdge.Type.ANY);
+            if (adjacentEdgeList.isEmpty()) {
+                newNetwork.removeNodes(Collections.singletonList(node));
+                // newView.getNodeView(newNode).setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
             }
         }
     }
@@ -183,9 +213,6 @@ public class Aesthetics {
             if (!(positive && negative)) {
                 newNetwork.removeNodes(Collections.singletonList(newNode));
                 // newView.getNodeView(newNode).setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
-            } else {
-                Integer size = 12;
-                newView.getNodeView(newNode).setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
             }
         }
     }
@@ -200,7 +227,7 @@ public class Aesthetics {
         Color[] colors = new Color[n];
         for (int i = 0; i < n; i++) {
             float hue = (float) i / n;
-            colors[i] = Color.getHSBColor(hue, 1.0f, 1.0f);
+            colors[i] = Color.getHSBColor(hue, 0.61f, 0.94f);
         }
         return colors;
     }

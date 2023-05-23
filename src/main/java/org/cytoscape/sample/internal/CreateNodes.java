@@ -1,5 +1,6 @@
 package org.cytoscape.sample.internal;
 
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
@@ -37,6 +38,10 @@ public class CreateNodes {
      */
     private HashMap<CyNode, String> compNodeToCompName;
     /**
+     * Translation from a compartment name to an organism name
+     */
+    private HashMap<String, String> compToOrg;
+    /**
      * Translation from external node names to a List of CyNodes
      */
     private final HashMap<String, List<CyNode>> extNamesToNodes = new HashMap<>();
@@ -44,6 +49,10 @@ public class CreateNodes {
      * Set of all compartments
      */
     final private Set<String> allCompartments;
+    /**
+     * Set of all organisms
+     */
+    final private Set<String> organisms;
     /**
      * List of all internal compartments
      */
@@ -56,6 +65,10 @@ public class CreateNodes {
      * List of all exchange nodes
      */
     private List<CyNode> exchgNodes = new ArrayList<>();
+    /**
+     * List of all exchange reactions (reactions with metabolites in the exchange compartment)
+     */
+    private List<CyNode> exchgReactions = new ArrayList<>();
 
     // Constructor
 
@@ -68,11 +81,13 @@ public class CreateNodes {
         this.oldNetwork = oldNetwork;
         this.newNetwork = newNetwork;
         this.allCompartments = createComps();
-        this.internalCompartments = createIntComps();
-        createExtNodes();
+        this.internalCompartments = createIntComps(); // Internal compartments are replaced by organisms
+        this.organisms = createOrganisms();
+        //createExtNodes();
         createExchgNodes();
+        createExchgReactions();
         addExtNodesToNewNetwork(exchgNodes);
-        addCompNodesToNewNetwork(internalCompartments);
+        addCompNodesToNewNetwork(organisms);
     }
 
     // Private Methods
@@ -88,21 +103,38 @@ public class CreateNodes {
 
         List<CyNode> allNodes = oldNetwork.getNodeList();
         for (CyNode currentNode : allNodes) {
-            if (oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml id", String.class) != null) {
-                String currentId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml id", String.class);
-                if (currentId.substring(Math.max(currentId.length() - 2, 0)).equals("c0")) {
-                    String[] listId = currentId.split("_", 0);
-                    if (listId.length > 3) {
-                        comps.add(listId[1].concat("c0"));
-                        comps.add(listId[1].concat("e0"));
+            String node_type = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml type", String.class);
+            if (node_type != null && Objects.equals(node_type, "species")) {
+                String comp_name = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml compartment", String.class);
+                comps.add(comp_name);
+            }
+        }
+        return comps;
+    }
 
+    private Set<String> createOrganisms() {
+        compToOrg = new HashMap<>();
+        // for comp in all comps
+        List<CyNode> allNodes = oldNetwork.getNodeList();
+        for (CyNode currentNode : allNodes) {
+            String node_type = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml type", String.class);
+            // Iterate over all metabolites
+            if (node_type != null && Objects.equals(node_type, "species")) {
+                String compartment = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml compartment", String.class);
+                String org = getPutativeOrganismFromNode(currentNode);
+                if (compToOrg.containsKey(compartment)) {
+                    // Check if org is smaller than current org
+                    if (org.length() < compToOrg.get(compartment).length()) {
+                        compToOrg.put(compartment, org);
                     }
+                }
+                else {
+                    compToOrg.put(compartment, org);
                 }
             }
         }
-        comps.add("exchg");
-
-        return comps;
+        // store the organisms extra
+        return new HashSet<>(compToOrg.values());
     }
 
     /**
@@ -114,7 +146,7 @@ public class CreateNodes {
         // [exchg, ac0, ...]
         List<String> intCompNodeNames = new ArrayList<>();
         for (String compartment : allCompartments) {
-            if (compartment.charAt(compartment.length() - 2) != 'e') {
+            if (compartment.charAt(compartment.length() - 2) != 'e' && !Objects.equals(compartment, "exchg")) {
                 intCompNodeNames.add(compartment);
             }
         }
@@ -162,16 +194,63 @@ public class CreateNodes {
         List<CyNode> exchangeNode = new ArrayList<>();
 
         for (CyNode currentNode : allNodes) {
-            // from ID we can get 'M' + 'exchg'
-            // Change to retrieval of compartment from compartment field, not sbml id
+            // from compartment we can check if it is exchange
             long suid = currentNode.getSUID();
             CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
             String compartment = node_row.get("sbml compartment", String.class);
-            //if (sbml_id == null) {sbml_id = new String("null");}
-            //String[] idParts = sbml_id.split("_");
             if (Objects.equals(compartment, "exchg")) {exchangeNode.add(currentNode);}
         }
         this.exchgNodes = exchangeNode;
+    }
+
+    /**
+     * Creates a list of nodes in the exchange compartment from the given network.
+     */
+    private void createExchgReactions() {
+        // here a list of reaction nodes in the exchg-compartment is made
+        List<CyNode> allNodes = oldNetwork.getNodeList();
+        List<CyNode> exchangeReactions = new ArrayList<>();
+
+        for (CyNode currentNode : allNodes) {
+            // from compartment we can check if it is exchange
+            long suid = currentNode.getSUID();
+            CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
+            String sbml_type = node_row.get("sbml type", String.class);
+            if (Objects.equals(sbml_type, "reaction")) {
+                List<CyNode> neighbors = getAllNeighbors(currentNode);
+                for (CyNode neighbor : neighbors) {
+                    String neighborComp = getCompOfMetaboliteNode(neighbor);
+                    if (Objects.equals(neighborComp, "exchg")) {
+                        // Is reaction with exchange metabolite
+                        exchangeReactions.add(currentNode);
+                        break;
+                    }
+                }
+            }
+        }
+        this.exchgReactions = exchangeReactions;
+    }
+
+    /**
+     * Returns a list of all neighbors of the given node in the given direction.
+     *
+     * @param startingNode the node to get the neighbors of
+     * @return a list of all neighbors of the given node
+     */
+    public List<CyNode> getAllNeighbors (CyNode startingNode){
+
+        List<CyNode> oldNeighbors = new ArrayList<>();
+
+        List<CyEdge> edges = oldNetwork.getAdjacentEdgeList(startingNode, CyEdge.Type.INCOMING);
+        for (CyEdge edge : edges) {
+            oldNeighbors.add(edge.getSource());
+        }
+        edges = oldNetwork.getAdjacentEdgeList(startingNode, CyEdge.Type.OUTGOING);
+        for (CyEdge edge : edges) {
+            oldNeighbors.add(edge.getTarget());
+        }
+
+        return oldNeighbors;
     }
 
     /**
@@ -186,7 +265,7 @@ public class CreateNodes {
 
         // loop through each external node
         for (CyNode oldNode : exchgNodes) {
-            String nodeName = getIdentityM(oldNode); // get the name of the node
+            String nodeName = getSharedName(oldNode); // get the name of the node
             CyNode newNode;
             if (!alreadyPlaced.containsKey(nodeName)) { // if we haven't already placed a node with this name
                 newNode = newNetwork.addNode(); // create a new node in the new network
@@ -208,7 +287,7 @@ public class CreateNodes {
      * Adds all the compartment nodes to the new network
      * @param compList is a List of all the compartment names
      */
-    private void addCompNodesToNewNetwork(List<String> compList) {
+    private void addCompNodesToNewNetwork(Set<String> compList) {
         // here the compartment Nodes are added to the new Network and HashMaps mapping old to new Nodes is created simultaneously
         HashMap<String, CyNode> compNameTranslation = new HashMap<>();
         HashMap<CyNode, String> compNodeTranslation = new HashMap<>();
@@ -230,11 +309,11 @@ public class CreateNodes {
      */
     private String getCompOfMetaboliteNode(CyNode node) {
         // here we return the compartment of a Node only if it is a Metabolite
-        if (oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class) != null) {
-            String currentId = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class);
-            if (currentId.length() > 0 && currentId.charAt(0) == 'M') {
-                String comp = getCompOfSBML(currentId);
-                if (allCompartments.contains(comp)) {return comp;}
+        String compartment = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml compartment", String.class);
+        String node_type = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml type", String.class);
+        if (node_type != null && Objects.equals(node_type, "species")) {
+            if (compartment != null) {
+                if (allCompartments.contains(compartment)) {return compartment;}
             }
         }
         return "unknown";
@@ -292,6 +371,21 @@ public class CreateNodes {
      * @param node the node for which to get the identifier
      * @return the identifier of the node in the format "Mcpd00000"
      */
+    private String getSharedName(CyNode node) {
+        String node_type = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml type", String.class);
+        if (node_type != null && Objects.equals(node_type, "species")) {
+            String shared_name = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("shared name", String.class);
+            if (shared_name != null) {return shared_name;}
+        }
+        return "ERROR";
+    }
+
+    /**
+     * Returns the identifier for a given node in the format "Mcpd00000".
+     *
+     * @param node the node for which to get the identifier
+     * @return the identifier of the node in the format "Mcpd00000"
+     */
     private String getIdentityM(CyNode node) {
         String[] idParts = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class).split("_");
         if (idParts[0].equals("M")) {
@@ -321,6 +415,62 @@ public class CreateNodes {
         } else {
             return getCompNodeFromName(compartment);
         }
+    }
+
+    /**
+     * Get-function
+     * @param node any node from the old network
+     * @return the name of its organism
+     */
+    public String getPutativeOrganismFromNode(CyNode node){
+        // here the internal compartment corresponding to a Node is returned, regardless where the Node is placed
+        String node_type = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml type", String.class);
+        if (node_type != null && Objects.equals(node_type, "species")) {
+            String sbmlId = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class);
+            String compartment = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml compartment", String.class);
+            if (Objects.equals(compartment, "exchg")) {return "exchg";}
+            String[] idParts = sbmlId.split("_");
+            String[] compParts = compartment.split("_");
+            if (!Objects.equals(idParts[1], compParts[0])) {return "Error";}
+            else {
+                String organism = idParts[1];
+                for (int i = 2; i < idParts.length; i++) {
+                    // compartment names must not be the same as organism names and must not by empty -> i-2
+                    if ((i-2) < compParts.length && Objects.equals(idParts[i], compParts[i-1])) {
+                        organism = organism + "_" + idParts[i];
+                    }
+                    else {break;}
+                }
+
+                return organism;
+            }
+        }
+        return "ERROR";
+    }
+
+    /**
+     * Get-function translation
+     * @param node any node in the old network
+     * @return the name of the organism the node belongs to (or exchg)
+     */
+    public String getOrganismFromNode(CyNode node){
+        // here the internal compartment corresponding to a Node is returned, regardless where the Node is placed
+        String node_type = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml type", String.class);
+        if (node_type != null && Objects.equals(node_type, "species")) {
+            String compartment = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml compartment", String.class);
+            return compToOrg.get(compartment);
+        }
+        return "ERROR";
+    }
+
+    /**
+     * Get-function translation
+     * @param node any node in the old network
+     * @return the name of the sbml type of the node
+     */
+    public String getSbmlTypeFromNode(CyNode node){
+        // here the internal compartment corresponding to a Node is returned, regardless where the Node is placed
+        return oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml type", String.class);
     }
 
     /**
@@ -407,5 +557,21 @@ public class CreateNodes {
      */
     public List<String> getIntComps(){
         return internalCompartments;
+    }
+
+    /**
+     * Get-function
+     * @return all internal compartments
+     */
+    public Set<String> getOrganisms(){
+        return organisms;
+    }
+
+    /**
+     * Get-function
+     * @return all internal compartments
+     */
+    public List<CyNode> getExchgReactions(){
+        return exchgReactions;
     }
 }

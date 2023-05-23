@@ -53,13 +53,13 @@ public class FileChoosing {
             {
                 String[] values = line.split("\t", 0);
                 if (!Objects.equals(values[0], "reaction_id")) {
-                    String key = "";
-                    String[] splitValues = values[0].split("_",0);
-                    if (splitValues.length == 4) {
-                        key = splitValues[0].concat(splitValues[2]);
-                    } else {
-                        key = splitValues[0].concat(splitValues[1]);
-                    }
+                    String key = values[0];
+                    //String[] splitValues = values[0].split("_",0);
+                    //if (splitValues.length == 4) {
+                    //    key = splitValues[0].concat(splitValues[2]);
+                    //} else {
+                    //    key = splitValues[0].concat(splitValues[1]);
+                    //}
                     tsvMap.put(key, Double.parseDouble(values[1]));
                 }
             }
