@@ -7,6 +7,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
+import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
 
 import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
@@ -47,6 +48,10 @@ public class Aesthetics {
      */
     private HashMap<String, Double> tsvMap;
     /**
+     * The boolean defining if the submitted flux map is fva or fba
+     */
+    private boolean isFva;
+    /**
      * Constructs an Aesthetics object using the specified parameters.
      *
      * @param nodes             the CreateNodes object used to access information about the network's nodes
@@ -57,16 +62,25 @@ public class Aesthetics {
      * @param tsvMap            a HashMap of TSV values for each node in the network
      */
 
-    public Aesthetics(CreateNodes nodes, HashMap<CyNode, Double> fluxMap, CyNetwork newNetwork, CyNetworkView newView, boolean showOnlyCrossfeeding, HashMap<String, Double> tsvMap) {
+    public Aesthetics(CreateNodes nodes, HashMap<CyNode, Double> fluxMap, CyNetwork newNetwork, CyNetworkView newView, boolean showOnlyCrossfeeding, HashMap<String, Double> tsvMap, Boolean isFva) {
         this.nodes = nodes;
         this.newNetwork = newNetwork;
         this.newView = newView;
         this.compList = nodes.getOrganisms();
         this.fluxMap = fluxMap;
         this.tsvMap = tsvMap;
+        this.isFva = isFva;
         compNodes();
         exchgNodes();
         edges();
+        if (!tsvMap.isEmpty()) {
+            if (!isFva) {
+                setCrossFeedingNodeStatus();  // cross-feeding status depends on flux data
+            }
+            else {
+                setCrossFeedingNodeStatusFva();
+            }
+        }
         newView.updateView();
         if (showOnlyCrossfeeding) {
             removeNonCFNodes();
@@ -125,10 +139,10 @@ public class Aesthetics {
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL, exchgNodeName);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ELLIPSE);
-            if (!tsvMap.isEmpty() && fluxMap.get(newNode).equals(0.0d)){
+            /*if (!tsvMap.isEmpty() && fluxMap.get(newNode).equals(0.0d)){
                 newNetwork.removeNodes(Collections.singletonList(newNode));
                 // exchgNodeView.setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
-            }
+            }*/
         }
     }
     /**
@@ -147,14 +161,20 @@ public class Aesthetics {
                 Paint edgeColor;
                 if (edgeFlux >= 0.0d) {
                     edgeColor = Color.getHSBColor(220.0f/360.0f, 0.61f, 0.94f);
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                 } else {
                     edgeColor = Color.getHSBColor(90.0f/360.0f, 0.61f, 0.94f);
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                 }
                 edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
 
                 // Width of the Edges is also based on Fluxes
                 if (edgeFlux != 0.0d) {
-                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, abs(edgeFlux) + 1);
+                    Double edgeWidth = abs(edgeFlux) + 1;
+                    if (edgeWidth > 50.0d) {
+                        edgeWidth = 50.0d;
+                    }
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
                 } else {
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 0);
                 }
@@ -183,6 +203,99 @@ public class Aesthetics {
             if (adjacentEdgeList.isEmpty()) {
                 newNetwork.removeNodes(Collections.singletonList(node));
                 // newView.getNodeView(newNode).setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
+            }
+        }
+    }
+    /**
+     * Sets the cross-fed column value for all exchange nodes
+     */
+    private void setCrossFeedingNodeStatus() {
+
+        List<CyNode> extNodesList = nodes.getExchgNodes();
+        for (CyNode exchgNode : extNodesList) {
+            CyNode newNode = nodes.getNewNode(exchgNode);
+            List<CyEdge> adjacentEdgeList = newNetwork.getAdjacentEdgeList(newNode, CyEdge.Type.ANY);
+            boolean positive = false;
+            boolean negative = false;
+            for (CyEdge currentEdge : adjacentEdgeList) {
+                Double currentFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("flux", Double.class);
+                if (currentFlux == null) {
+                    continue;
+                }
+                if (currentFlux < 0) {
+                    negative = true;
+                }
+                if (currentFlux > 0) {
+                    positive = true;
+                }
+            }
+            if (!isFva && !(positive && negative)) {
+                newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("cross-fed", false);
+                // newView.getNodeView(newNode).setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
+            }
+            else {
+                newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("cross-fed", true);
+            }
+        }
+    }
+    /**
+     * Sets the cross-fed column value for all exchange nodes
+     */
+    private void setCrossFeedingNodeStatusFva() {
+
+        List<CyNode> extNodesList = nodes.getExchgNodes();
+        for (CyNode exchgNode : extNodesList) {
+            Set<String> negativeSet = new HashSet<>();
+            Set<String> positiveSet = new HashSet<>();
+            CyNode newNode = nodes.getNewNode(exchgNode);
+            List<CyEdge> adjacentEdgeList = newNetwork.getAdjacentEdgeList(newNode, CyEdge.Type.ANY);
+            boolean positive = false;
+            boolean negative = false;
+            for (CyEdge currentEdge : adjacentEdgeList) {
+                Double currentFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("flux", Double.class);
+                if (currentFlux == null) {
+                    continue;
+                }
+
+                String target = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("target", String.class);
+                String source = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("source", String.class);
+                String comp;
+                if (nodes.getOrganisms().contains(target)) {
+                    comp = target;
+                } else if (nodes.getOrganisms().contains(source)) {
+                    comp = source;
+                }
+                else {
+                    continue;
+                }
+
+                if (currentFlux < 0) {
+                    negativeSet.add(comp);
+                }
+                if (currentFlux > 0) {
+                    positiveSet.add(comp);
+                }
+            }
+            Iterator<String> posCompIterator = positiveSet.iterator();
+
+            Boolean isCrossFed = false;
+            while (posCompIterator.hasNext()){
+                String posComp = posCompIterator.next();
+                if (negativeSet.size() > 1 && negativeSet.contains(posComp)) {
+                    isCrossFed = true;
+                    break;
+                } else if (negativeSet.size() > 0 && !negativeSet.contains(posComp)) {
+                    isCrossFed = true;
+                    break;
+                }
+            }
+
+            if (isCrossFed) {
+                newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("cross-fed", true);
+                // newView.getNodeView(newNode).setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
+            }
+            else {
+                newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("cross-fed", false);
             }
         }
     }

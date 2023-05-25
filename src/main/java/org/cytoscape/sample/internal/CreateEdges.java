@@ -60,6 +60,10 @@ public class CreateEdges {
      * Flux-map translated from the TSV-map
      */
     private final HashMap<CyNode, Double> nodeFluxes = new HashMap<>();
+    /**
+     * The boolean defining if the submitted flux map is fva or fba
+     */
+    private boolean isFva;
 
     /**
      * Adds all the corresponding edges and their attributes to the new network.
@@ -68,10 +72,11 @@ public class CreateEdges {
      * @param createNodes is the CreateNodes object created earlier holding all the translations
      * @param tsvMap is the map with the flux-values, if one was loaded in
      */
-    public CreateEdges(CyNetwork oldNetwork, CyNetwork newNetwork, CreateNodes createNodes, HashMap<String, Double> tsvMap) {
+    public CreateEdges(CyNetwork oldNetwork, CyNetwork newNetwork, CreateNodes createNodes, HashMap<String, Double> tsvMap, Boolean isFva) {
         this.edgeIDs = new ArrayList<>();
         if (tsvMap.isEmpty()) {this.mapAdded = false;}
         this.tsvMap = tsvMap;
+        this.isFva = isFva;
         this.newNetwork = newNetwork;
         this.oldNetwork = oldNetwork;
         this.createNodes = createNodes;
@@ -97,6 +102,7 @@ public class CreateEdges {
         newNetwork.getDefaultEdgeTable().createColumn("sbml id", String.class, true);
         newNetwork.getDefaultEdgeTable().createColumn("flux", Double.class, true);
         newNetwork.getDefaultEdgeTable().createColumn("stoichiometry", Double.class, true);
+        newNetwork.getDefaultEdgeTable().createColumn("reverse", Boolean.class, true);
         makeEdgesOfReactions();
         //makeEdgesToNode();
         //makeEdgesFromNode();
@@ -111,7 +117,7 @@ public class CreateEdges {
         // or compartment Nodes if the Source is in a compartment
 
         for (CyNode oldExchgRxnNode : oldExchgReactionNodes) {
-
+            Boolean isReversible = oldNetwork.getDefaultNodeTable().getRow(oldExchgRxnNode.getSUID()).get("reversible", Boolean.class);
             List<CyNode> oldSources = getAllNeighbors(oldExchgRxnNode, "Sources");
             List<CyNode> oldTargets = getAllNeighbors(oldExchgRxnNode, "Targets");
             List<CyNode> oldNeighbors = createNodes.getAllNeighbors(oldExchgRxnNode);
@@ -170,8 +176,12 @@ public class CreateEdges {
                         }
 
                         CyEdge edge = makeEdge(sourceMetNode, targetMetNode);
-                        edgeTributesReaction(edge, sourceMetNode, targetMetNode, oldExchgRxnNode, stoichiometry);
+                        edgeTributesReaction(edge, sourceMetNode, targetMetNode, oldExchgRxnNode, stoichiometry, false);
                         targetsVisited.add(targetMetNode);
+                        if (isReversible) {
+                            CyEdge revEdge = makeEdge(targetMetNode, sourceMetNode);
+                            edgeTributesReaction(revEdge, targetMetNode, sourceMetNode, oldExchgRxnNode, stoichiometry, true);
+                        }
                     }
                 }
                 sourcesVisited.add(sourceMetNode);
@@ -418,7 +428,7 @@ public class CreateEdges {
             String targetName = oldNetwork.getDefaultNodeTable().getRow(oldTarget.getSUID()).get("shared name", String.class);
             String sharedName = oldNetwork.getDefaultNodeTable().getRow(oldSource.getSUID()).get("shared name", String.class);
             String fluxKey = getFluxKey(oldSource);
-            Double fluxValue = getFlux(fluxKey);
+            Double fluxValue = getFlux(fluxKey, false);
             if(mapAdded) {
                 setFlux(oldTarget, fluxValue);
             }
@@ -433,7 +443,7 @@ public class CreateEdges {
             String sourceName = oldNetwork.getDefaultNodeTable().getRow(oldSource.getSUID()).get("shared name", String.class);
             String sharedName = sourceName.concat(" - Import");
             String fluxKey = getFluxKey(oldTarget);
-            Double fluxValue = getFlux(fluxKey);
+            Double fluxValue = getFlux(fluxKey, false);
             if(mapAdded) {
                 setFlux(oldSource, fluxValue);
             }
@@ -465,16 +475,33 @@ public class CreateEdges {
      * @param reaction The old node of the reaction.
      * @param stoich A double containing the stoichiometry of the reaction from the source to target
      */
-    private void edgeTributesReaction (CyEdge currentEdge, CyNode newSource, CyNode newTarget, CyNode reaction, double stoich){
+    private void edgeTributesReaction (CyEdge currentEdge, CyNode newSource, CyNode newTarget, CyNode reaction, double stoich, Boolean isReverse){
         // here all the attributes of an Edge are added to its entry in the edge-table (external Node to comp Node)
         String sourceName = newNetwork.getDefaultNodeTable().getRow(newSource.getSUID()).get("shared name", String.class);
         String targetName = newNetwork.getDefaultNodeTable().getRow(newTarget.getSUID()).get("shared name", String.class);
         String sharedName = oldNetwork.getDefaultNodeTable().getRow(reaction.getSUID()).get("shared name", String.class);
         String sbmlId = oldNetwork.getDefaultNodeTable().getRow(reaction.getSUID()).get("sbml id", String.class).replaceFirst("^R_", "");
         String fluxKey = sbmlId;
-        Double fluxValue = getFlux(fluxKey);
+        String name;
+        if (isReverse) {
+            name = fluxKey + "_rev";
+        }
+        else {
+            name = fluxKey;
+        }
+
+        Double fluxValue = getFlux(fluxKey, isReverse);
         if(mapAdded) {
-            setFlux(newTarget, fluxValue);
+            if (isReverse && fluxValue < 0.0d) {
+                setFlux(newSource, fluxValue);  // Only the non reverse target is in the flux map
+            }
+            else if (!isReverse && fluxValue > 0.0d) {
+                setFlux(newTarget, fluxValue);
+            }
+            else {
+                fluxValue = 0.0d;
+            }
+
         }
         newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("source", sourceName);
         newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("target", targetName);
@@ -484,6 +511,7 @@ public class CreateEdges {
         newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("name", fluxKey);
         newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("sbml id", sbmlId);
         newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("stoichiometry", stoich);
+        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("reverse", isReverse);
     }
 
     /**
@@ -544,12 +572,22 @@ public class CreateEdges {
      * @return the flux value corresponding to the given key if it exists, 0.0 if the key is not found and the map is added,
      * or null if the key is empty or the map has not been added.
      */
-    private Double getFlux(String key) {
-        if (mapAdded && tsvMap.get(key) == null) {
+    private Double getFlux(String key, Boolean isReverse) {
+        if (!isFva && mapAdded && tsvMap.get(key) == null) {
             return 0.0d;
         }
         if (!mapAdded || Objects.equals(key, "")) {
             return null;
+        } else if (isFva) {
+            if (isReverse && tsvMap.get(key + "_min") != null) {
+                return tsvMap.get(key + "_min");
+            }
+            else if (!isReverse && tsvMap.get(key + "_max") != null) {
+                return tsvMap.get(key + "_max");
+            }
+            else {
+                return 0.0d;
+            }
         } else {
             return tsvMap.get(key);
         }

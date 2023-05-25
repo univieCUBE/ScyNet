@@ -83,6 +83,8 @@ public class CreateNodes {
         this.allCompartments = createComps();
         this.internalCompartments = createIntComps(); // Internal compartments are replaced by organisms
         this.organisms = createOrganisms();
+        newNetwork.getDefaultNodeTable().createColumn("type", String.class, true);
+        newNetwork.getDefaultNodeTable().createColumn("cross-fed", Boolean.class, true);
         //createExtNodes();
         createExchgNodes();
         createExchgReactions();
@@ -273,6 +275,7 @@ public class CreateNodes {
                 newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("name", nodeName); // set the name attribute of the new node
                 String nodeSharedName = oldNetwork.getDefaultNodeTable().getRow(oldNode.getSUID()).get("shared name", String.class); // get the "shared name" attribute of the old node
                 newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("shared name", nodeSharedName); // set the "shared name" attribute of the new node
+                newNetwork.getDefaultNodeTable().getRow(newNode.getSUID()).set("type", "exchange metabolite");
             } else {
                 newNode = alreadyPlaced.get(nodeName); // if we've already placed a node with this name, get it from the alreadyPlaced HashMap
             }
@@ -293,8 +296,9 @@ public class CreateNodes {
         HashMap<CyNode, String> compNodeTranslation = new HashMap<>();
         for (String compartment : compList) {
             CyNode compNode = newNetwork.addNode();
-
+            newNetwork.getDefaultNodeTable().getRow(compNode.getSUID()).set("name", compartment);
             newNetwork.getDefaultNodeTable().getRow(compNode.getSUID()).set("shared name", compartment);
+            newNetwork.getDefaultNodeTable().getRow(compNode.getSUID()).set("type", "community member");
             compNameTranslation.put(compartment, compNode);
             compNodeTranslation.put(compNode, compartment);
         }

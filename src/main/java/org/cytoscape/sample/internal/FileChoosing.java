@@ -18,11 +18,15 @@ public class FileChoosing {
      */
     private File chosenFile;
 
+    public Boolean isFva;
+
     /**
      * This opens a JFileChooser where a TSV-file can be selected.
      */
     public FileChoosing()
     {
+        this.isFva = false; // Set the default value
+
         // Here we use the JFileChooser to open a window where the user can select a TSV-file with the fluxes
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Choose the tab-delimited TSV-file or press CANCEL");
@@ -49,10 +53,12 @@ public class FileChoosing {
         try {
             // parsing a TSV file into BufferedReader class constructor
             BufferedReader br = new BufferedReader(new FileReader(chosenFile));
+            Boolean headerFound = false;
+            this.isFva = false;
             while ((line = br.readLine()) != null)
             {
                 String[] values = line.split("\t", 0);
-                if (!Objects.equals(values[0], "reaction_id")) {
+                if (!Objects.equals(values[0], "reaction_id")  && headerFound && !isFva) {
                     String key = values[0];
                     //String[] splitValues = values[0].split("_",0);
                     //if (splitValues.length == 4) {
@@ -61,7 +67,22 @@ public class FileChoosing {
                     //    key = splitValues[0].concat(splitValues[1]);
                     //}
                     tsvMap.put(key, Double.parseDouble(values[1]));
+                } else if (!Objects.equals(values[0], "reaction_id")  && headerFound && isFva) {
+                    String key = values[0];
+                    tsvMap.put(key + "_min", Double.parseDouble(values[1]));
+                    tsvMap.put(key + "_max", Double.parseDouble(values[2]));
+                } else if (!headerFound && Objects.equals(values[0], "reaction_id")) {
+                    headerFound = true;
+                    if (Objects.equals(values[1], "flux")){
+                        isFva = false;
+                    } else if (values.length > 2 && Objects.equals(values[1], "min_flux") && Objects.equals(values[2], "max_flux")) {
+                        isFva = true;
+                    }
+                    else {
+                        return tsvMap;  // Wrong formatting
+                    }
                 }
+
             }
         }
         catch (IOException e) {

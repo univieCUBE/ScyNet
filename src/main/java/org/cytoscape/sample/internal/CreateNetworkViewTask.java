@@ -55,6 +55,10 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 * The boolean defined by the 'crossfeeding' toggle-button
 	 */
 	private boolean showOnlyCrossfeeding;
+	/**
+	 * The boolean defining if the submitted flux map is fva or fba
+	 */
+	private boolean isFva;
 
 	/**
 	 * A task-class which executes all the needed steps to create a new network-view.
@@ -70,7 +74,7 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 */
 	public CreateNetworkViewTask(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
 								 CyNetworkViewFactory cnvf, final CyNetworkViewManager networkViewManager,
-								 final DataSourceManager dataSourceManager, CyNetwork currentNetwork, HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager) {
+								 final DataSourceManager dataSourceManager, CyNetwork currentNetwork, HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager, Boolean isFva) {
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
@@ -79,6 +83,7 @@ public class CreateNetworkViewTask extends AbstractTask {
 		this.dataSourceManager = dataSourceManager;
 		this.currentNetwork = cyApplicationManager.getCurrentNetwork();
 		this.tsvMap = tsvMap;
+		this.isFva = isFva;
 		this.showOnlyCrossfeeding = showOnlyCrossfeeding;
 	}
 
@@ -88,7 +93,7 @@ public class CreateNetworkViewTask extends AbstractTask {
 
 		// My Code goes here
 		CreateNodes createNodes = new CreateNodes(currentNetwork, newNetwork);
-		CreateEdges createEdges = new CreateEdges(currentNetwork, newNetwork, createNodes, tsvMap);
+		CreateEdges createEdges = new CreateEdges(currentNetwork, newNetwork, createNodes, tsvMap, isFva);
 
 		// Here I add a name to my Network
 		newNetwork.getDefaultNetworkTable().getRow(newNetwork.getSUID()).set("name", cyNetworkNaming.getSuggestedNetworkTitle("Simplified Network-view"));
@@ -107,6 +112,6 @@ public class CreateNetworkViewTask extends AbstractTask {
 			System.out.println("This Network View already existed.");
 		}
 		// Here the color/size/label etc. of the Nodes and Edges is changed
-		Aesthetics aesthetics = new Aesthetics(createNodes, createEdges.getFLuxMap(), newNetwork, myView, showOnlyCrossfeeding, tsvMap);
+		Aesthetics aesthetics = new Aesthetics(createNodes, createEdges.getFLuxMap(), newNetwork, myView, showOnlyCrossfeeding, tsvMap, isFva);
 	}
 }

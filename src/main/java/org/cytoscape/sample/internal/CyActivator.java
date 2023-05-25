@@ -1,20 +1,15 @@
 package org.cytoscape.sample.internal;
 
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.io.datasource.DataSourceManager;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
-import org.cytoscape.model.CyNode;
-import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.view.model.View;
 import org.cytoscape.work.TaskFactory;
-import org.cytoscape.work.swing.PanelTaskManager;
 import org.osgi.framework.BundleContext;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CyNetworkNaming;
@@ -22,12 +17,11 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Properties;
 import java.util.Set;
 
 import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
+import static org.cytoscape.work.ServiceProperties.TITLE;
 
 
 /**
@@ -81,8 +75,15 @@ public class CyActivator extends AbstractCyActivator {
 		createNetworkViewTaskFactoryProps.setProperty("title", "Create Simplified Community Network");
 		registerService(bc, createNetworkViewTaskFactory, TaskFactory.class, createNetworkViewTaskFactoryProps);
 
+		ToggleShowOnlyCfNodesTaskFactory toggleShowOnlyCfNodes = new ToggleShowOnlyCfNodesTaskFactory(cyApplicationManager);
+		Properties toggleShowOnlyCfNodesProperties = new Properties();
+		toggleShowOnlyCfNodesProperties.setProperty("preferredMenu","Apps.SCyNet");
+		toggleShowOnlyCfNodesProperties.setProperty("title", "Toggle Nodes");
+		registerService(bc,toggleShowOnlyCfNodes, NetworkViewTaskFactory.class,toggleShowOnlyCfNodesProperties);
+
+
 		// Add the JToggleButton to the JFrame and make it visible
-		myFrame.add(myButton);
+		/*myFrame.add(myButton);
 		myFrame.setSize(400,200);
 		myFrame.setVisible(true);
 
@@ -95,6 +96,6 @@ public class CyActivator extends AbstractCyActivator {
 				}
 			}
 		}
-		);
+		);*/
 	}
 }

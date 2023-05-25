@@ -103,7 +103,7 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	public TaskIterator createTaskIterator() {
 		FileChoosing newChooser = new FileChoosing();
 		HashMap<String, Double> tsvMap = newChooser.makeMap();
-		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, dataSourceManager, currentNetwork, tsvMap, showOnlyCrossfeeding, cyApplicationManager));
+		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, dataSourceManager, currentNetwork, tsvMap, showOnlyCrossfeeding, cyApplicationManager, newChooser.isFva));
 	}
 
 	/**
