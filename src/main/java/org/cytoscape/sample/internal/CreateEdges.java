@@ -533,6 +533,9 @@ public class CreateEdges {
      * @param fluxValue the new flux value to set for the node
      */
     private void setFlux(CyNode newNode, Double fluxValue){
+        if (nodeFluxes.get(newNode) == null) {
+            nodeFluxes.put(newNode,0.0d);
+        }
         if (!fluxValue.equals(0.0)){
             Double newFlux = nodeFluxes.get(newNode) + Math.abs(fluxValue);
             nodeFluxes.put(newNode,newFlux);
