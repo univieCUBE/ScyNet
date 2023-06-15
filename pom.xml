@@ -5,7 +5,7 @@
 	<properties>
 		<bundle.symbolicName>org.cytoscape.scynet</bundle.symbolicName>
 		<bundle.namespace>org.cytoscape.sample.internal</bundle.namespace>
-		<cytoscape.api.version>3.0.0</cytoscape.api.version>
+		<cytoscape.api.version>3.9.0</cytoscape.api.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven-bundle-plugin.version>2.3.4</maven-bundle-plugin.version>
 		<osgi.api.version>4.2.0</osgi.api.version>
@@ -128,6 +128,12 @@
             <version>3.1.0</version>
             <scope>compile</scope>
         </dependency>
+		<dependency>
+			<groupId>org.cytoscape</groupId>
+			<artifactId>layout-api</artifactId>
+			<version>3.0.0</version>
+			<scope>compile</scope>
+		</dependency>
         <dependency>
             <groupId>org.cytoscape</groupId>
             <artifactId>event-api</artifactId>

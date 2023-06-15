@@ -8,6 +8,9 @@ import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
 import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
+import org.cytoscape.view.presentation.property.values.Justification;
+import org.cytoscape.view.presentation.property.values.ObjectPosition;
+import org.cytoscape.view.presentation.property.values.Position;
 
 import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
@@ -106,13 +109,25 @@ public class Aesthetics {
 
             String compNodeName = newNetwork.getDefaultNodeTable().getRow(nodes.getCompNodeFromName(compartment).getSUID()).get("shared name", String.class);
             double compNodeSize = compNodeView.getVisualProperty(BasicVisualLexicon.NODE_SIZE) + 100;
-            Paint compNodeColor = new ColorUIResource(equidistantColors[idx - 1]);
+            Color compNodeColor = new Color(145,191,219, 175);
+            Paint compNodePaint = new ColorUIResource(compNodeColor);
+            Color compNodeBorderColor = new Color(255,255,255, 255);
+            Paint compNodeBorderPaint = new ColorUIResource(compNodeBorderColor);
             Integer size = 25;
-            compNodeView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, compNodeColor);
-            compNodeView.setLockedValue(BasicVisualLexicon.NODE_SIZE, compNodeSize);
+            double compNodeHeight = 100.0d;
+            double compNodeWidth = 150.0d;
+            double compNodeBorderWidth = 10.0d;
+            ObjectPosition compNodeLabelPosition = new ObjectPosition(Position.CENTER, Position.CENTER, Justification.JUSTIFY_CENTER, 0.0d, 0.0d);
+
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_POSITION, compNodeLabelPosition);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_BORDER_WIDTH, compNodeBorderWidth);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_BORDER_PAINT, compNodeBorderPaint);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, compNodePaint);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_HEIGHT, compNodeHeight);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_WIDTH, compNodeWidth);
             compNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL, compNodeName);
             compNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
-            compNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ELLIPSE);
+            compNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ROUND_RECTANGLE);
         }
     }
     /**
@@ -128,14 +143,22 @@ public class Aesthetics {
                 continue;
             }
             String exchgNodeName = newNetwork.getDefaultNodeTable().getRow(nodes.getNewNode(exchgNode).getSUID()).get("shared name", String.class);
-            Paint exchgNodeColor = Color.getHSBColor(0.05f, 0.61f, 0.94f);
-            double exchgNodeWidth = 120.0d;
-            double exchgNodeHeight = 55.0d;
+            Color exchgNodeColor = new Color(223,194,125, 175);
+            Paint exchgNodePaint = new ColorUIResource(exchgNodeColor);
+            Color exchgNodeBorderColor = new Color(255,255,255, 255);
+            Paint exchgNodeBorderPaint = new ColorUIResource(exchgNodeBorderColor);
+            double exchgNodeWidth = 32.0d;
+            //double exchgNodeHeight = 55.0d;
             int size = 22;
+            double exchgNodeBorderWidth = 10.0d;
+            ObjectPosition exchgNodeLabelPosition = new ObjectPosition(Position.NORTH_EAST, Position.NORTH_WEST, Justification.JUSTIFY_CENTER, 0.0d, 0.0d);
 
-            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, exchgNodeColor);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_POSITION, exchgNodeLabelPosition);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_BORDER_WIDTH, exchgNodeBorderWidth);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_BORDER_PAINT, exchgNodeBorderPaint);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_FILL_COLOR, exchgNodePaint);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_WIDTH, exchgNodeWidth);
-            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_HEIGHT, exchgNodeHeight);
+            exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_HEIGHT, exchgNodeWidth);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL, exchgNodeName);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ELLIPSE);
@@ -154,39 +177,86 @@ public class Aesthetics {
             String edgeSourceName = newNetwork.getDefaultNodeTable().getRow(newEdge.getSource().getSUID()).get("shared name", String.class);
             String edgeTargetName = newNetwork.getDefaultNodeTable().getRow(newEdge.getTarget().getSUID()).get("shared name", String.class);
             Double edgeFlux = newNetwork.getDefaultEdgeTable().getRow(newEdge.getSUID()).get("flux", Double.class);
+            Double edgeMinFlux = newNetwork.getDefaultEdgeTable().getRow(newEdge.getSUID()).get("min flux", Double.class);
+            Double edgeMaxFlux = newNetwork.getDefaultEdgeTable().getRow(newEdge.getSUID()).get("max flux", Double.class);
             View<CyEdge> edgeView = newView.getEdgeView(newEdge);
             // If Fluxes were added or not
-            if (edgeFlux != null) {
-                // Color of the Edges is selected based on Fluxes
-                Paint edgeColor;
-                if (edgeFlux >= 0.0d) {
-                    edgeColor = Color.getHSBColor(220.0f/360.0f, 0.61f, 0.94f);
-                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
-                } else {
-                    edgeColor = Color.getHSBColor(90.0f/360.0f, 0.61f, 0.94f);
-                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
-                }
-                edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
-
-                // Width of the Edges is also based on Fluxes
-                if (edgeFlux != 0.0d) {
-                    Double edgeWidth = abs(edgeFlux) + 1;
-                    if (edgeWidth > 50.0d) {
-                        edgeWidth = 50.0d;
+            if (isFva) {
+                Double edgeWidth = 10.0d;
+                edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
+                if (edgeMinFlux != null && edgeMaxFlux != null) {
+                    // Color of the Edges is selected based on Fluxes
+                    Paint edgeColor;
+                    if (edgeMinFlux < 0.0d && edgeMaxFlux > 0.0d) {
+                        edgeColor = new Color(194,165,207, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                     }
-                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
+                    else if (edgeMaxFlux > 0.0d) {
+                        edgeColor = new Color(253,174,97, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
+                    } else if (edgeMinFlux < 0.0d) {
+                        edgeColor = new Color(128,205,193, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
+                    }
+                    else {
+                        edgeColor = new Color(0,0,0,175);
+                    }
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
+
+                    // Width of the Edges is also based on Fluxes
+                    if (edgeMinFlux == 0.0d && edgeMaxFlux == 0.0d) {
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 0);
+                    }
                 } else {
-                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 0);
+
+                    // Otherwise we just chose the Color based on their direction
+                    if (compList.contains(edgeSourceName)) {
+                        Paint edgeColor = new Color(253,174,97, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
+                    }
+                    if (compList.contains(edgeTargetName)) {
+                        Paint edgeColor = new Color(128,205,193, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
+                    }
                 }
-            } else {
-                // Otherwise we just chose the Color based on their direction
-                if (compList.contains(edgeSourceName)) {
-                    Paint edgeColor = Color.getHSBColor(220.0f/360.0f, 0.61f, 0.94f);
+            }
+            else {
+                if (edgeFlux != null) {
+                    // Color of the Edges is selected based on Fluxes
+                    Paint edgeColor = new Color(0,0,0, 175);;
+                    if (edgeFlux > 0.0d) {
+                        edgeColor = new Color(253,174,97, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
+                    } else if (edgeFlux < 0.0d) {
+                        edgeColor = new Color(128,205,193, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
+                    }
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
-                }
-                if (compList.contains(edgeTargetName)) {
-                    Paint edgeColor = Color.getHSBColor(90.0f/360.0f, 0.61f, 0.94f);
-                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
+
+                    // Width of the Edges is also based on Fluxes
+                    if (edgeFlux != 0.0d) {
+                        Double edgeWidth = abs(edgeFlux) + 1;
+                        if (edgeWidth > 50.0d) {
+                            edgeWidth = 50.0d;
+                        }
+                        edgeWidth = 10.0d;
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
+                    } else {
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 0);
+                    }
+                } else {
+                    Double edgeWidth = 10.0d;
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
+                    // Otherwise we just chose the Color based on their direction
+                    if (compList.contains(edgeSourceName)) {
+                        Paint edgeColor = new Color(253,174,97, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
+                    }
+                    if (compList.contains(edgeTargetName)) {
+                        Paint edgeColor = new Color(128,205,193, 175);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
+                    }
                 }
             }
         }
@@ -252,8 +322,10 @@ public class Aesthetics {
             boolean positive = false;
             boolean negative = false;
             for (CyEdge currentEdge : adjacentEdgeList) {
-                Double currentFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("flux", Double.class);
-                if (currentFlux == null) {
+                Double minFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("min flux", Double.class);
+                Double maxFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("max flux", Double.class);
+
+                if (minFlux == null || maxFlux == null) {
                     continue;
                 }
 
@@ -269,10 +341,10 @@ public class Aesthetics {
                     continue;
                 }
 
-                if (currentFlux < 0) {
+                if (minFlux < 0) {
                     negativeSet.add(comp);
                 }
-                if (currentFlux > 0) {
+                if (maxFlux > 0) {
                     positiveSet.add(comp);
                 }
             }

@@ -1,27 +1,25 @@
 package org.cytoscape.sample.internal;
 
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.io.datasource.DataSourceManager;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.task.NetworkViewTaskFactory;
+import org.cytoscape.view.layout.CyLayoutAlgorithm;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.work.TaskFactory;
+import org.cytoscape.work.TunableSetter;
+import org.cytoscape.work.undo.UndoSupport;
 import org.osgi.framework.BundleContext;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CyNetworkNaming;
-import org.osgi.framework.BundleEvent;
-import org.osgi.framework.SynchronousBundleListener;
 
 import javax.swing.*;
 import java.util.Properties;
 import java.util.Set;
-
-import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
-import static org.cytoscape.work.ServiceProperties.TITLE;
 
 
 /**
@@ -52,6 +50,7 @@ public class CyActivator extends AbstractCyActivator {
 		CyApplicationManager cyApplicationManager = getService(bc, CyApplicationManager.class);
 		CyNetworkViewFactory cyNetworkViewFactoryServiceRef = getService(bc,CyNetworkViewFactory.class);
 		CyNetworkViewManager cyNetworkViewManagerServiceRef = getService(bc,CyNetworkViewManager.class);
+		UndoSupport undo = getService(bc, UndoSupport.class);
 
 		// Set properties for creating a network view task factory
 		Properties createNetworkViewTaskFactoryProps = new Properties();
@@ -80,6 +79,22 @@ public class CyActivator extends AbstractCyActivator {
 		toggleShowOnlyCfNodesProperties.setProperty("preferredMenu","Apps.SCyNet");
 		toggleShowOnlyCfNodesProperties.setProperty("title", "Toggle Nodes");
 		registerService(bc,toggleShowOnlyCfNodes, NetworkViewTaskFactory.class,toggleShowOnlyCfNodesProperties);
+
+		ScynetLayout scynetLayout = new ScynetLayout(undo, cyApplicationManager);
+
+		Properties customLayoutProps = new Properties();
+		customLayoutProps.setProperty("preferredMenu","Custom Layouts");
+		registerService(bc, scynetLayout, CyLayoutAlgorithm.class, customLayoutProps);
+
+		// ApplyCustomLayoutTaskFactory service
+		CyLayoutAlgorithmManager layoutManager = getService(bc, CyLayoutAlgorithmManager.class);
+		TunableSetter tunableSetter = getService(bc, TunableSetter.class);
+		ApplyScynetLayoutTaskFactory applyLayoutTaskFactory = new ApplyScynetLayoutTaskFactory(layoutManager, tunableSetter);
+
+		Properties applyCustomLayoutProperties = new Properties();
+		applyCustomLayoutProperties.setProperty("preferredMenu","Apps.SCyNet");
+		applyCustomLayoutProperties.setProperty("title", "Apply ScyNet Layout");
+		registerService(bc, applyLayoutTaskFactory, NetworkViewTaskFactory.class, applyCustomLayoutProperties);
 
 
 		// Add the JToggleButton to the JFrame and make it visible
