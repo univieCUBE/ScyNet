@@ -70,15 +70,24 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 					else {
 						// Partition metabolites into: disconnected, single connection, double connection, multi connection
 						List<CyEdge> edges = currentNetwork.getAdjacentEdgeList(node, CyEdge.Type.ANY);
-						if (edges.isEmpty()) {
-							continue;
-						} else if (edges.size() == 1) {
+						List<CyEdge> visibleEdges = new ArrayList<>();
+
+						for (CyEdge edge : edges) {
+							View<CyEdge> edgeView = networkView.getEdgeView(edge);
+							if (edgeView.getVisualProperty(BasicVisualLexicon.EDGE_VISIBLE)) {
+								visibleEdges.add(edge);
+							}
+						}
+
+						if (visibleEdges.isEmpty()) {
+							nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, false);
+						} else if (visibleEdges.size() == 1) {
 							singleNodes.add(node);
 						}
-						else if (edges.size() == 2) {
+						else if (visibleEdges.size() == 2) {
 							doubleNodes.add(node);
 						}
-						else if (edges.size() > 2) {
+						else if (visibleEdges.size() > 2) {
 							multiNodes.add(node);
 						}
 					}
@@ -92,6 +101,10 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 						String firstNeighbor = null;
 						List<CyEdge> edges = currentNetwork.getAdjacentEdgeList(node, CyEdge.Type.ANY);
 						for (CyEdge edge : edges) {
+							View<CyEdge> edgeView = networkView.getEdgeView(edge);
+							if (!edgeView.getVisualProperty(BasicVisualLexicon.EDGE_VISIBLE)) {
+								continue;
+							}
 							CyNode neighbor;
 							neighbor = edge.getSource();
 							if (Objects.equals(neighbor, node)) {
@@ -272,7 +285,7 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 					else {
 						// Place the node between the member neighbors
 						radians = Math.PI * 2 * (indexNeighbor1 + indexNeighbor2) / (2 * numMembers);
-						double radiusOffset = 2 * sizeMetaboliteNode;
+						double radiusOffset = 4 * sizeMetaboliteNode;
 						if (numberPlacedDouble.get(connectedPair) != null) {
 							radiusOffset = radiusOffset + sizeMetaboliteNode * 1.5 * numberPlacedDouble.get(connectedPair);
 						}
@@ -293,6 +306,10 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 					CyNode neighbor = null;
 					List<CyEdge> edges = currentNetwork.getAdjacentEdgeList(singleNode, CyEdge.Type.ANY);
 					for (CyEdge edge : edges) {
+						View<CyEdge> edgeView = networkView.getEdgeView(edge);
+						if (!edgeView.getVisualProperty(BasicVisualLexicon.EDGE_VISIBLE)) {
+							continue;
+						}
 						neighbor = edge.getSource();
 						if (Objects.equals(neighbor, singleNode)) {
 							neighbor = edge.getTarget();

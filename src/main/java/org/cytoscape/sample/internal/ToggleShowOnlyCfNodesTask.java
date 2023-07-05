@@ -48,20 +48,20 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 		if (columnNames.contains("type") && columnNames.contains("cross-fed")) {
 			List<CyNode> nonCrossFedNodes = CyTableUtil.getNodesInState(cyApplicationManager.getCurrentNetwork(),"cross-fed",false);
 
-			Boolean anyHidden = false;
+			Boolean allHidden = true;
 			for (CyNode node : nonCrossFedNodes) {
 				View<CyNode> nodeView = view.getNodeView(node);
 				if (nodeView == null) {
 					continue;
 				}
-				if (!nodeView.getVisualProperty(BasicVisualLexicon.NODE_VISIBLE)) {
-					anyHidden = true;
+				if (nodeView.getVisualProperty(BasicVisualLexicon.NODE_VISIBLE)) {
+					allHidden = false;
 					break;
 				}
 			}
 
 
-			if (anyHidden) {
+			if (allHidden) {
 				for (CyNode node : nonCrossFedNodes) {
 					View<CyNode> nodeView = view.getNodeView(node);
 					if (nodeView == null) {

@@ -206,7 +206,7 @@ public class Aesthetics {
 
                     // Width of the Edges is also based on Fluxes
                     if (edgeMinFlux == 0.0d && edgeMaxFlux == 0.0d) {
-                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 0);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
                     }
                 } else {
 
@@ -243,7 +243,7 @@ public class Aesthetics {
                         edgeWidth = 10.0d;
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
                     } else {
-                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_TRANSPARENCY, 0);
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
                     }
                 } else {
                     Double edgeWidth = 10.0d;
