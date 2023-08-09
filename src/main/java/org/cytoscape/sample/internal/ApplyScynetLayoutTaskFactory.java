@@ -16,11 +16,9 @@ import java.util.Map;
  */
 public class ApplyScynetLayoutTaskFactory implements NetworkViewTaskFactory {
 	private CyLayoutAlgorithmManager layoutManager;
-	private TunableSetter tunableSetter;
 
-	public ApplyScynetLayoutTaskFactory(CyLayoutAlgorithmManager layoutManager, TunableSetter tunableSetter) {
+	public ApplyScynetLayoutTaskFactory(CyLayoutAlgorithmManager layoutManager) {
 		this.layoutManager = layoutManager;
-		this.tunableSetter = tunableSetter;
 	}
 	
 	public TaskIterator createTaskIterator(CyNetworkView view) {
@@ -31,14 +29,6 @@ public class ApplyScynetLayoutTaskFactory implements NetworkViewTaskFactory {
 		// Create a new context for the layout so we can configure the settings
 		// without changing the user's defaults.
 		Object context = layout.createLayoutContext();
-		
-		// Use TunableSetter to change the values on the Tunable fields on
-		// the context object (in this case, MyLayoutContext).  These values
-		// get applied when the tasks are run.
-		Map<String, Object> tunableValues = new HashMap<String, Object>();
-		tunableValues.put("XRange", 50);
-		tunableValues.put("YRange", 50);
-		tunableSetter.applyTunables(context, tunableValues);
 
 		String layoutAttribute = null;
 		return layout.createTaskIterator(view, context, CyLayoutAlgorithm.ALL_NODE_VIEWS, layoutAttribute);

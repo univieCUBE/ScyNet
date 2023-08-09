@@ -2,7 +2,6 @@ package org.cytoscape.sample.internal;
 
 
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.io.datasource.DataSourceManager;
 import org.cytoscape.model.*;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.view.model.CyNetworkView;
@@ -40,10 +39,6 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 */
 	private final CyNetworkNaming cyNetworkNaming;
 	/**
-	 * The manager for data sources in Cytoscape
-	 */
-	private final DataSourceManager dataSourceManager;
-	/**
 	 * The current network in Cytoscape
 	 */
 	private final CyNetwork currentNetwork;
@@ -67,20 +62,17 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 * @param networkManager the manager for networks in Cytoscape
 	 * @param cnvf the factory for creating network views
 	 * @param networkViewManager the manager for network views in Cytoscape
-	 * @param dataSourceManager the manager for data sources in Cytoscape
-	 * @param currentNetwork the current network in Cytoscape
 	 * @param tsvMap the loaded TSV-file for the Fluxes
 	 * @param showOnlyCrossfeeding the boolean of the toggle-button (Show 'crossfeeding')
 	 */
 	public CreateNetworkViewTask(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
 								 CyNetworkViewFactory cnvf, final CyNetworkViewManager networkViewManager,
-								 final DataSourceManager dataSourceManager, CyNetwork currentNetwork, HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager, Boolean isFva) {
+								 HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager, Boolean isFva) {
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
 		this.networkManager = networkManager;
 		this.cyNetworkNaming = cyNetworkNaming;
-		this.dataSourceManager = dataSourceManager;
 		this.currentNetwork = cyApplicationManager.getCurrentNetwork();
 		this.tsvMap = tsvMap;
 		this.isFva = isFva;
@@ -112,6 +104,6 @@ public class CreateNetworkViewTask extends AbstractTask {
 			System.out.println("This Network View already existed.");
 		}
 		// Here the color/size/label etc. of the Nodes and Edges is changed
-		Aesthetics aesthetics = new Aesthetics(createNodes, createEdges.getFLuxMap(), newNetwork, myView, showOnlyCrossfeeding, tsvMap, isFva);
+		Aesthetics aesthetics = new Aesthetics(createNodes, newNetwork, myView, showOnlyCrossfeeding, tsvMap, isFva);
 	}
 }

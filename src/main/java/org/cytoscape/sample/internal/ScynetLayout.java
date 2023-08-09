@@ -30,7 +30,6 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 	}
 	
 	public TaskIterator createTaskIterator(CyNetworkView networkView, Object context, Set<View<CyNode>> nodesToLayOut, String attrName) {
-		final ScynetLayoutContext myContext = (ScynetLayoutContext) context;
 		Task task = new AbstractLayoutTask(toString(), networkView, nodesToLayOut, attrName, undoSupport) {
 			@Override
 			protected void doLayout(TaskMonitor taskMonitor) {
@@ -87,7 +86,7 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 						else if (visibleEdges.size() == 2) {
 							doubleNodes.add(node);
 						}
-						else if (visibleEdges.size() > 2) {
+						else {
 							multiNodes.add(node);
 						}
 					}
@@ -217,14 +216,10 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 				7. Layout single connections
 
 				 */
-				double currX = 0.0d;
-				double currY = 0.0d;
-				
+
 				final VisualProperty<Double> xLoc = BasicVisualLexicon.NODE_X_LOCATION;
 				final VisualProperty<Double> yLoc = BasicVisualLexicon.NODE_Y_LOCATION;
-				
-				Random randomGenerator = new Random();
-				
+
 				// Set visual property.
 
 				for (View<CyNode> nodeView : nodesToLayOut) {
@@ -299,7 +294,6 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 					doubleNodeIndex += 1;
 				}
 
-				double singleNodeIndex = 0;
 				HashMap<CyNode, Integer> numberPlacedSingle = new HashMap<>();
 				double minRadiansOffset = 2 * sizeMetaboliteNode / radiusSingle;
 				for (CyNode singleNode : singleNodes) {
@@ -328,7 +322,6 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 
 					nodeView.setVisualProperty(xLoc,getXCoordinateFromPolar(radiusSingle, radians + minRadiansOffset * radiansOffset));
 					nodeView.setVisualProperty(yLoc,getYCoordinateFromPolar(radiusSingle, radians + minRadiansOffset * radiansOffset));
-					singleNodeIndex += 1;
 					numberPlacedSingle.put(neighbor, numberPlacedSingle.get(neighbor) + 1);
 				}
 
@@ -338,9 +331,11 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 		return new TaskIterator(task);
 	}
 
+	/*
 	public Object createLayoutContext() {
 		return new ScynetLayoutContext();
 	}
+	 */
 
 	private double getXCoordinateFromPolar(double radius, double radians) {
 		return (double) Math.round(radius * Math.cos(radians));

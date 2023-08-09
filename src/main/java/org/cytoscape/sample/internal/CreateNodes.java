@@ -26,10 +26,6 @@ public class CreateNodes {
      */
     private HashMap<CyNode, CyNode> oldToNewNodes;
     /**
-     * Translation from new to old nodes
-     */
-    private HashMap<CyNode, List<CyNode>> newToOldNodes;
-    /**
      * Translation from compartment name to CyNode
      */
     private HashMap<String, CyNode> compNameToCompNode;
@@ -42,10 +38,6 @@ public class CreateNodes {
      */
     private HashMap<String, String> compToOrg;
     /**
-     * Translation from external node names to a List of CyNodes
-     */
-    private final HashMap<String, List<CyNode>> extNamesToNodes = new HashMap<>();
-    /**
      * Set of all compartments
      */
     final private Set<String> allCompartments;
@@ -53,10 +45,6 @@ public class CreateNodes {
      * Set of all organisms
      */
     final private Set<String> organisms;
-    /**
-     * List of all internal compartments
-     */
-    final private List<String> internalCompartments;
     /**
      * List of all external nodes
      */
@@ -81,11 +69,13 @@ public class CreateNodes {
         this.oldNetwork = oldNetwork;
         this.newNetwork = newNetwork;
         this.allCompartments = createComps();
-        this.internalCompartments = createIntComps(); // Internal compartments are replaced by organisms
+        /**
+         * List of all internal compartments
+         */
+        // Internal compartments are replaced by organisms
         this.organisms = createOrganisms();
         newNetwork.getDefaultNodeTable().createColumn("type", String.class, true);
         newNetwork.getDefaultNodeTable().createColumn("cross-fed", Boolean.class, true);
-        //createExtNodes();
         createExchgNodes();
         createExchgReactions();
         addExtNodesToNewNetwork(exchgNodes);
@@ -137,54 +127,6 @@ public class CreateNodes {
         }
         // store the organisms extra
         return new HashSet<>(compToOrg.values());
-    }
-
-    /**
-     * Creates a list of all internal compartments by removing the external ones from a given list of compartments.
-     * @return A List of compartment names (as Strings) with the suffix "_e" removed.
-     */
-    private List<String> createIntComps() {
-        // makes a list of all internal compartments by removing the external ones from all compartments
-        // [exchg, ac0, ...]
-        List<String> intCompNodeNames = new ArrayList<>();
-        for (String compartment : allCompartments) {
-            if (compartment.charAt(compartment.length() - 2) != 'e' && !Objects.equals(compartment, "exchg")) {
-                intCompNodeNames.add(compartment);
-            }
-        }
-        // intCompNodeNames.remove("exchg");
-        return intCompNodeNames;
-    }
-
-    /**
-     * Creates a list of external Nodes from a given network, where external nodes are defined as those associated with compartments with a suffix of "e**" (external) or "exchg" (exchange).
-     * For every differing 'shared name' a node is defined, and a dictionary connecting the name to all its ancestors is created.
-     */
-    private void createExtNodes() {
-        // here a list of external Nodes is created by looping through all Nodes and only adding one Node of a certain type (shared name)
-        // we also create a dictionary connecting the name to all its ancestors
-        // for every differing 'shared name' a node is defined
-        List<CyNode> allNodes = oldNetwork.getNodeList();
-        List<String> externalNodeNames = new ArrayList<>();
-
-        for (CyNode currentNode : allNodes) {
-            String currentComp = getCompOfMetaboliteNode(currentNode);
-            if (currentComp.charAt(currentComp.length() - 2) == 'e' || currentComp.equals("exchg")) {
-                //String currentName = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("shared name", String.class);
-                String currentName = getIdentityM(currentNode);
-                // This gets an ID which is equal for equal 'shared name'. Which is accessed by sbml id 'M' + 'cpd00000'
-                if (!externalNodeNames.contains(currentName)) {
-                    extNodes.add(currentNode);
-                    externalNodeNames.add(currentName);
-                    List<CyNode> externalNodeList = new ArrayList<>();
-                    externalNodeList.add(currentNode);
-                    extNamesToNodes.put(currentName, externalNodeList);
-                } else {
-                    extNodes.add(currentNode);
-                    extNamesToNodes.get(currentName).add(currentNode);
-                }
-            }
-        }
     }
 
     /**
@@ -283,7 +225,6 @@ public class CreateNodes {
             newOldTranslation.put(newNode, Arrays.asList(oldNode)); // add the new-to-old mapping to the newOldTranslation HashMap
         }
         this.oldToNewNodes = oldNewTranslation; // store the old-to-new mapping in the class variable
-        this.newToOldNodes = newOldTranslation; // store the new-to-old mapping in the class variable
     }
 
     /**
@@ -384,24 +325,6 @@ public class CreateNodes {
         return "ERROR";
     }
 
-    /**
-     * Returns the identifier for a given node in the format "Mcpd00000".
-     *
-     * @param node the node for which to get the identifier
-     * @return the identifier of the node in the format "Mcpd00000"
-     */
-    private String getIdentityM(CyNode node) {
-        String[] idParts = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class).split("_");
-        if (idParts[0].equals("M")) {
-            if (idParts.length == 3) {
-                return idParts[1];
-            } else {
-                return idParts[2];
-            }
-        }
-        return "ERROR";
-    }
-
     // Public Methods [sorted by output]
 
     /**
@@ -487,15 +410,6 @@ public class CreateNodes {
     }
 
     /**
-     * Get-function translation
-     * @param newNode a node in the new network
-     * @return the corresponding node in the old network
-     */
-    public List<CyNode> getOldNode(CyNode newNode) {
-        return newToOldNodes.get(newNode);
-    }
-
-    /**
      * Get-function
      * @param compName the name of a compartment node in the new network
      * @return its CyNode class object
@@ -522,15 +436,6 @@ public class CreateNodes {
 
     /**
      * Get-function translation
-     * @param nodeName the external nodes name
-     * @return the CyNode class object of it
-     */
-    public List<CyNode> getExtNodesFromName(String nodeName) {
-        return extNamesToNodes.get(nodeName);
-    }
-
-    /**
-     * Get-function translation
      * @param compNode the compartments node in the new network
      * @return its name as a String
      */
@@ -545,22 +450,6 @@ public class CreateNodes {
      */
     public String getNodeSharedName(CyNode oldNode) {
         return oldNetwork.getDefaultNodeTable().getRow(oldNode.getSUID()).get("shared name", String.class);
-    }
-
-    /**
-     * Get-function
-     * @return all compartments
-     */
-    public Set<String> getAllComps() {
-        return allCompartments;
-    }
-
-    /**
-     * Get-function
-     * @return all internal compartments
-     */
-    public List<String> getIntComps(){
-        return internalCompartments;
     }
 
     /**

@@ -42,14 +42,6 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	 */
 	private final CyNetworkNaming cyNetworkNaming;
 	/**
-	 * The manager for data sources in Cytoscape
-	 */
-	private final DataSourceManager dataSourceManager;
-	/**
-	 * The current network in Cytoscape
-	 */
-	private final CyNetwork currentNetwork;
-	/**
 	 * The boolean defined by the 'crossfeeding' toggle-button
 	 */
 	private boolean showOnlyCrossfeeding;
@@ -78,8 +70,6 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 		this.networkViewManager = networkViewManager;
 		this.networkManager = networkManager;
 		this.cyNetworkNaming = cyNetworkNaming;
-		this.dataSourceManager = dataSourceManager;
-		this.currentNetwork = cyApplicationManager.getCurrentNetwork();
 		this.cyApplicationManager = cyApplicationManager;
 		this.showOnlyCrossfeeding = false;
 		this.myButton = myButton;
@@ -103,7 +93,7 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	public TaskIterator createTaskIterator() {
 		FileChoosing newChooser = new FileChoosing();
 		HashMap<String, Double> tsvMap = newChooser.makeMap();
-		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, dataSourceManager, currentNetwork, tsvMap, showOnlyCrossfeeding, cyApplicationManager, newChooser.isFva));
+		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, tsvMap, showOnlyCrossfeeding, cyApplicationManager, newChooser.isFva));
 	}
 
 	/**

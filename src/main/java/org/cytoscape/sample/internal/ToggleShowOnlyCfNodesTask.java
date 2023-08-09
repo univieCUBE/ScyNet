@@ -4,16 +4,12 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.task.AbstractNetworkViewTask;
-import org.cytoscape.view.presentation.property.BooleanVisualProperty;
-import org.cytoscape.work.TaskMonitor;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.work.TaskMonitor;
 
-import javax.swing.*;
-import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.Set;
 
@@ -22,8 +18,6 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 	private CyApplicationManager cyApplicationManager;
 
 	public ToggleShowOnlyCfNodesTask(CyNetworkView view, CyApplicationManager cyApplicationManager){
-		/*super("Toggle show only cross-feeding nodes");
-		setPreferredMenu("Apps.SCyNet");*/
 		super(view);
 		this.cyApplicationManager = cyApplicationManager;
 	}
@@ -33,7 +27,6 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 		if (cyApplicationManager.getCurrentNetwork() == null){			
 			return;
 		}
-		CyNetwork network = cyApplicationManager.getCurrentNetwork();
 
 		if(view == null){
 			return;

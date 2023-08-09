@@ -14,7 +14,7 @@
 	<groupId>org.cytoscape.sample</groupId>
 	<artifactId>scynet</artifactId>
 	<packaging>bundle</packaging>
-	<version>1.0</version>
+	<version>0.1.0</version>
 	
 	<name>ScyNet</name>
 

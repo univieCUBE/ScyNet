@@ -43,35 +43,48 @@ public class Aesthetics {
      */
     private final Set<String> compList;
     /**
-     * Flux-Map translated from the TSV-Map
+    * A color palette for the network visualisations. Colors are used in the following order:
+     * 1. Node member
+     * 2. Node metabolite
+     * 3. Arrow influx
+     * 4. Arrow efflux
+     * 5. Arrow bidirectional
+     * 6. Arrow 0 flux
      */
-    private HashMap<CyNode, Double> fluxMap;
-    /**
-     * TSV-map created from the TSV-file if it was added
-     */
-    private HashMap<String, Double> tsvMap;
+    private final ArrayList<Color> palette;
     /**
      * The boolean defining if the submitted flux map is fva or fba
      */
-    private boolean isFva;
+    private final boolean isFva;
     /**
      * Constructs an Aesthetics object using the specified parameters.
      *
      * @param nodes             the CreateNodes object used to access information about the network's nodes
-     * @param fluxMap           a HashMap of flux values for each node in the network
      * @param newNetwork        the CyNetwork object to be modified
      * @param newView           the CyNetworkView object to be modified
      * @param showOnlyCrossfeeding  a boolean flag indicating whether only crossfeeding nodes should be displayed
      * @param tsvMap            a HashMap of TSV values for each node in the network
      */
 
-    public Aesthetics(CreateNodes nodes, HashMap<CyNode, Double> fluxMap, CyNetwork newNetwork, CyNetworkView newView, boolean showOnlyCrossfeeding, HashMap<String, Double> tsvMap, Boolean isFva) {
+    public Aesthetics(CreateNodes nodes, CyNetwork newNetwork, CyNetworkView newView, boolean showOnlyCrossfeeding, HashMap<String, Double> tsvMap, Boolean isFva) {
+        this.palette = new ArrayList<>();
+        Color compNodeColor = new Color(145,191,219, 175);
+        Color exchgNodeColor = new Color(223,194,125, 175);
+        Color influxArrowColor = new Color(128,205,193, 175);
+        Color effluxArrowColor = new Color(253,174,97, 175);
+        Color bidirectionalArrowColor = new Color(194,165,207, 175);
+        Color zeroFluxArrowColor = new Color(20,20,20,175);
+        this.palette.add(compNodeColor);
+        this.palette.add(exchgNodeColor);
+        this.palette.add(influxArrowColor);
+        this.palette.add(effluxArrowColor);
+        this.palette.add(bidirectionalArrowColor);
+        this.palette.add(zeroFluxArrowColor);
+
         this.nodes = nodes;
         this.newNetwork = newNetwork;
         this.newView = newView;
         this.compList = nodes.getOrganisms();
-        this.fluxMap = fluxMap;
-        this.tsvMap = tsvMap;
         this.isFva = isFva;
         compNodes();
         exchgNodes();
@@ -95,12 +108,7 @@ public class Aesthetics {
      */
     private void compNodes() {
         // Here we change the appearance of the Compartment Nodes
-        Iterator<String> compListIterator = compList.iterator();
-        Color[] equidistantColors = getEquidistantColors(compList.size());
-        int idx = 0;
-        while (compListIterator.hasNext()) {
-            String compartment = compListIterator.next();
-            idx++;
+        for (String compartment : compList) {
             // Here
             View<CyNode> compNodeView = newView.getNodeView(nodes.getCompNodeFromName(compartment));
             if (compNodeView == null) {
@@ -108,10 +116,9 @@ public class Aesthetics {
             }
 
             String compNodeName = newNetwork.getDefaultNodeTable().getRow(nodes.getCompNodeFromName(compartment).getSUID()).get("shared name", String.class);
-            double compNodeSize = compNodeView.getVisualProperty(BasicVisualLexicon.NODE_SIZE) + 100;
-            Color compNodeColor = new Color(145,191,219, 175);
+            Color compNodeColor = this.palette.get(0);
             Paint compNodePaint = new ColorUIResource(compNodeColor);
-            Color compNodeBorderColor = new Color(255,255,255, 255);
+            Color compNodeBorderColor = new Color(255, 255, 255, 255);
             Paint compNodeBorderPaint = new ColorUIResource(compNodeBorderColor);
             Integer size = 25;
             double compNodeHeight = 100.0d;
@@ -143,7 +150,7 @@ public class Aesthetics {
                 continue;
             }
             String exchgNodeName = newNetwork.getDefaultNodeTable().getRow(nodes.getNewNode(exchgNode).getSUID()).get("shared name", String.class);
-            Color exchgNodeColor = new Color(223,194,125, 175);
+            Color exchgNodeColor = this.palette.get(1);
             Paint exchgNodePaint = new ColorUIResource(exchgNodeColor);
             Color exchgNodeBorderColor = new Color(255,255,255, 255);
             Paint exchgNodeBorderPaint = new ColorUIResource(exchgNodeBorderColor);
@@ -162,10 +169,6 @@ public class Aesthetics {
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL, exchgNodeName);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_LABEL_FONT_SIZE, size);
             exchgNodeView.setLockedValue(BasicVisualLexicon.NODE_SHAPE, NodeShapeVisualProperty.ELLIPSE);
-            /*if (!tsvMap.isEmpty() && fluxMap.get(newNode).equals(0.0d)){
-                newNetwork.removeNodes(Collections.singletonList(newNode));
-                // exchgNodeView.setVisualProperty(BasicVisualLexicon.NODE_TRANSPARENCY, 0);
-            }*/
         }
     }
     /**
@@ -188,19 +191,19 @@ public class Aesthetics {
                     // Color of the Edges is selected based on Fluxes
                     Paint edgeColor;
                     if (edgeMinFlux < 0.0d && edgeMaxFlux > 0.0d) {
-                        edgeColor = new Color(194,165,207, 175);
+                        edgeColor = this.palette.get(4);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                     }
                     else if (edgeMaxFlux > 0.0d) {
-                        edgeColor = new Color(253,174,97, 175);
+                        edgeColor = this.palette.get(3);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                     } else if (edgeMinFlux < 0.0d) {
-                        edgeColor = new Color(128,205,193, 175);
+                        edgeColor = this.palette.get(2);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                     }
                     else {
-                        edgeColor = new Color(0,0,0,175);
+                        edgeColor = this.palette.get(5);
                     }
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
 
@@ -212,11 +215,11 @@ public class Aesthetics {
 
                     // Otherwise we just chose the Color based on their direction
                     if (compList.contains(edgeSourceName)) {
-                        Paint edgeColor = new Color(253,174,97, 175);
+                        Paint edgeColor = this.palette.get(3);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                     }
                     if (compList.contains(edgeTargetName)) {
-                        Paint edgeColor = new Color(128,205,193, 175);
+                        Paint edgeColor = this.palette.get(2);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                     }
                 }
@@ -224,12 +227,12 @@ public class Aesthetics {
             else {
                 if (edgeFlux != null) {
                     // Color of the Edges is selected based on Fluxes
-                    Paint edgeColor = new Color(0,0,0, 175);;
+                    Paint edgeColor = this.palette.get(5);
                     if (edgeFlux > 0.0d) {
-                        edgeColor = new Color(253,174,97, 175);
+                        edgeColor = this.palette.get(3);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                     } else if (edgeFlux < 0.0d) {
-                        edgeColor = new Color(128,205,193, 175);
+                        edgeColor = this.palette.get(2);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE, ArrowShapeVisualProperty.DELTA);
                     }
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
@@ -250,11 +253,11 @@ public class Aesthetics {
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
                     // Otherwise we just chose the Color based on their direction
                     if (compList.contains(edgeSourceName)) {
-                        Paint edgeColor = new Color(253,174,97, 175);
+                        Paint edgeColor = this.palette.get(3);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                     }
                     if (compList.contains(edgeTargetName)) {
-                        Paint edgeColor = new Color(128,205,193, 175);
+                        Paint edgeColor = this.palette.get(2);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                     }
                 }
@@ -319,8 +322,6 @@ public class Aesthetics {
             Set<String> positiveSet = new HashSet<>();
             CyNode newNode = nodes.getNewNode(exchgNode);
             List<CyEdge> adjacentEdgeList = newNetwork.getAdjacentEdgeList(newNode, CyEdge.Type.ANY);
-            boolean positive = false;
-            boolean negative = false;
             for (CyEdge currentEdge : adjacentEdgeList) {
                 Double minFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("min flux", Double.class);
                 Double maxFlux = newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).get("max flux", Double.class);
@@ -402,20 +403,6 @@ public class Aesthetics {
         }
     }
 
-    /**
-     * Calculates equidistant colors for the given number of compartment nodes in the network.
-     *
-     * @param n amount of colors which a needed to generate
-     * @return the values for the 'n' colors
-     */
-    public static Color[] getEquidistantColors(int n) {
-        Color[] colors = new Color[n];
-        for (int i = 0; i < n; i++) {
-            float hue = (float) i / n;
-            colors[i] = Color.getHSBColor(hue, 0.61f, 0.94f);
-        }
-        return colors;
-    }
 }
 
 

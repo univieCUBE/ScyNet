@@ -53,19 +53,13 @@ public class FileChoosing {
         try {
             // parsing a TSV file into BufferedReader class constructor
             BufferedReader br = new BufferedReader(new FileReader(chosenFile));
-            Boolean headerFound = false;
+            boolean headerFound = false;
             this.isFva = false;
             while ((line = br.readLine()) != null)
             {
                 String[] values = line.split("\t", 0);
                 if (!Objects.equals(values[0], "reaction_id")  && headerFound && !isFva) {
                     String key = values[0];
-                    //String[] splitValues = values[0].split("_",0);
-                    //if (splitValues.length == 4) {
-                    //    key = splitValues[0].concat(splitValues[2]);
-                    //} else {
-                    //    key = splitValues[0].concat(splitValues[1]);
-                    //}
                     tsvMap.put(key, Double.parseDouble(values[1]));
                 } else if (!Objects.equals(values[0], "reaction_id")  && headerFound && isFva) {
                     String key = values[0];
