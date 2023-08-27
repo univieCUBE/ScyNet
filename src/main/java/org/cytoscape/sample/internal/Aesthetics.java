@@ -73,13 +73,15 @@ public class Aesthetics {
         Color influxArrowColor = new Color(128,205,193, 175);
         Color effluxArrowColor = new Color(253,174,97, 175);
         Color bidirectionalArrowColor = new Color(194,165,207, 175);
-        Color zeroFluxArrowColor = new Color(20,20,20,175);
+        Color zeroFluxArrowColor = new Color(100,100,100,175);
+        Color defaultArrowColor = new Color(50,50,50,175);
         this.palette.add(compNodeColor);
         this.palette.add(exchgNodeColor);
         this.palette.add(influxArrowColor);
         this.palette.add(effluxArrowColor);
         this.palette.add(bidirectionalArrowColor);
         this.palette.add(zeroFluxArrowColor);
+        this.palette.add(defaultArrowColor);
 
         this.nodes = nodes;
         this.newNetwork = newNetwork;
@@ -212,16 +214,9 @@ public class Aesthetics {
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
                     }
                 } else {
-
-                    // Otherwise we just chose the Color based on their direction
-                    if (compList.contains(edgeSourceName)) {
-                        Paint edgeColor = this.palette.get(3);
-                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
-                    }
-                    if (compList.contains(edgeTargetName)) {
-                        Paint edgeColor = this.palette.get(2);
-                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
-                    }
+                    // Otherwise we just chose the Color with a default color
+                    Paint edgeColor = this.palette.get(6);
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                 }
             }
             else {
@@ -251,15 +246,9 @@ public class Aesthetics {
                 } else {
                     Double edgeWidth = 10.0d;
                     edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
-                    // Otherwise we just chose the Color based on their direction
-                    if (compList.contains(edgeSourceName)) {
-                        Paint edgeColor = this.palette.get(3);
-                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
-                    }
-                    if (compList.contains(edgeTargetName)) {
-                        Paint edgeColor = this.palette.get(2);
-                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
-                    }
+                    // Otherwise we just chose the Color with a default color
+                    Paint edgeColor = this.palette.get(6);
+                    edgeView.setLockedValue(BasicVisualLexicon.EDGE_PAINT, edgeColor);
                 }
             }
         }

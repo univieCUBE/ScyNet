@@ -57,6 +57,14 @@ public class CreateNodes {
      * List of all exchange reactions (reactions with metabolites in the exchange compartment)
      */
     private List<CyNode> exchgReactions = new ArrayList<>();
+    /**
+     * String with ID of the shared compartment -> will be called exchg here
+     */
+    private String exchgCompID = "";
+    /**
+     * Hashset of nodes to ignore. I.e. nodes that do not belong to an organism nor the shared compartment.
+     */
+    private HashSet<CyNode> ignoredNodes = new HashSet<>();
 
     // Constructor
 
@@ -68,6 +76,7 @@ public class CreateNodes {
     public CreateNodes(CyNetwork oldNetwork, CyNetwork newNetwork) {
         this.oldNetwork = oldNetwork;
         this.newNetwork = newNetwork;
+        this.exchgCompID = getExchgCompID();
         this.allCompartments = createComps();
         /**
          * List of all internal compartments
@@ -106,6 +115,7 @@ public class CreateNodes {
 
     private Set<String> createOrganisms() {
         compToOrg = new HashMap<>();
+        ignoredNodes = new HashSet<>();
         // for comp in all comps
         List<CyNode> allNodes = oldNetwork.getNodeList();
         for (CyNode currentNode : allNodes) {
@@ -114,6 +124,13 @@ public class CreateNodes {
             if (node_type != null && Objects.equals(node_type, "species")) {
                 String compartment = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml compartment", String.class);
                 String org = getPutativeOrganismFromNode(currentNode);
+                if (Objects.equals(org, "IGNORE")) {
+                    ignoredNodes.add(currentNode);
+                    if (allCompartments.contains(compartment)) {
+                        allCompartments.remove(compartment);
+                    }
+                    continue;
+                }
                 if (compToOrg.containsKey(compartment)) {
                     // Check if org is smaller than current org
                     if (org.length() < compToOrg.get(compartment).length()) {
@@ -129,6 +146,20 @@ public class CreateNodes {
         return new HashSet<>(compToOrg.values());
     }
 
+    private String getExchgCompID() {
+        String compId = "medium";
+        List<CyNode> allNodes = oldNetwork.getNodeList();
+        for (CyNode currentNode : allNodes) {
+            String node_type = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml type", String.class);
+            String cyId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("cyId", String.class);
+            // Iterate over all metabolites
+            if (node_type != null && Objects.equals(node_type, "parameter") && Objects.equals(cyId, "shared_compartment_id")) {
+                compId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("shared name", String.class);
+            }
+        }
+        return compId;
+    }
+
     /**
      * Creates a list of nodes in the exchange compartment from the given network.
      */
@@ -138,11 +169,12 @@ public class CreateNodes {
         List<CyNode> exchangeNode = new ArrayList<>();
 
         for (CyNode currentNode : allNodes) {
+            if (isIgnoredNode(currentNode)) {continue;}
             // from compartment we can check if it is exchange
             long suid = currentNode.getSUID();
             CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
             String compartment = node_row.get("sbml compartment", String.class);
-            if (Objects.equals(compartment, "exchg")) {exchangeNode.add(currentNode);}
+            if (Objects.equals(compartment, this.exchgCompID)) {exchangeNode.add(currentNode);}
         }
         this.exchgNodes = exchangeNode;
     }
@@ -156,6 +188,7 @@ public class CreateNodes {
         List<CyNode> exchangeReactions = new ArrayList<>();
 
         for (CyNode currentNode : allNodes) {
+            if (isIgnoredNode(currentNode)) {continue;}
             // from compartment we can check if it is exchange
             long suid = currentNode.getSUID();
             CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
@@ -164,7 +197,7 @@ public class CreateNodes {
                 List<CyNode> neighbors = getAllNeighbors(currentNode);
                 for (CyNode neighbor : neighbors) {
                     String neighborComp = getCompOfMetaboliteNode(neighbor);
-                    if (Objects.equals(neighborComp, "exchg")) {
+                    if (Objects.equals(neighborComp, this.exchgCompID)) {
                         // Is reaction with exchange metabolite
                         exchangeReactions.add(currentNode);
                         break;
@@ -264,51 +297,7 @@ public class CreateNodes {
         return "unknown";
     }
 
-    /**
-     * Get-function
-     * @param sbmlId the 'sbml id' value of a certain node
-     * @return translates the ID into the name of the corresponding compartment (String)
-     */
-    private String getCompOfSBML(String sbmlId) {
-        // this method is used to translate every sbmlId-string into the corresponding compartment
-        String ending = sbmlId.substring(Math.max(sbmlId.length() - 2, 0));
-        switch (ending) {
-            case "c0": {
-                String[] listId = sbmlId.split("_", 0);
-                if (listId.length > 3) {
-                    return listId[1].concat("c0");
-                } else {
-                    return sbmlId;
-                }
-            }
-            case "e0": {
-                String[] listId = sbmlId.split("_", 0);
-                if (listId.length > 3) {
-                    return listId[1].concat("e0");
-                } else {
-                    return sbmlId;
-                }
-            }
-            case "hg": {
-                return "exchg";
-            }
-        }
-        return "exchg";
-    }
 
-    /**
-     * Get-function
-     * @param node any node from the old network
-     * @return its corresponding compartment if it has one, else 'unknown'
-     */
-    private String getCompOfNode(CyNode node) {
-        // here the compartment of a Node is calculated using its sbmlId
-        if (oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class) != null) {
-            String currentId = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class);
-            return getCompOfSBML(currentId);
-        }
-        return "unknown";
-    }
 
     /**
      * Returns the identifier for a given node in the format "Mcpd00000".
@@ -327,22 +316,6 @@ public class CreateNodes {
 
     // Public Methods [sorted by output]
 
-    /**
-     * Get-function
-     * @param node any node from the old network
-     * @return its corresponding internal compartment
-     */
-    public CyNode getIntCompNodeForAnyNode(CyNode node){
-        // here the internal compartment corresponding to a Node is returned, regardless where the Node is placed
-        String compartment = getCompOfNode(node);
-
-        if (compartment.charAt(compartment.length() - 2) == 'e'){
-            String comp = compartment.substring(0,compartment.length() - 2).concat("c0");
-            return getCompNodeFromName(comp);
-        } else {
-            return getCompNodeFromName(compartment);
-        }
-    }
 
     /**
      * Get-function
@@ -355,10 +328,10 @@ public class CreateNodes {
         if (node_type != null && Objects.equals(node_type, "species")) {
             String sbmlId = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml id", String.class);
             String compartment = oldNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("sbml compartment", String.class);
-            if (Objects.equals(compartment, "exchg")) {return "exchg";}
+            if (Objects.equals(compartment, this.exchgCompID)) {return this.exchgCompID;}
             String[] idParts = sbmlId.split("_");
             String[] compParts = compartment.split("_");
-            if (!Objects.equals(idParts[1], compParts[0])) {return "Error";}
+            if (!Objects.equals(idParts[1], compParts[0])) {return "IGNORE";}
             else {
                 String organism = idParts[1];
                 for (int i = 2; i < idParts.length; i++) {
@@ -434,14 +407,6 @@ public class CreateNodes {
         return exchgNodes;
     }
 
-    /**
-     * Get-function translation
-     * @param compNode the compartments node in the new network
-     * @return its name as a String
-     */
-    public String getCompNameFromNode(CyNode compNode) {
-        return compNodeToCompName.get(compNode);
-    }
 
     /**
      * Get-function
@@ -466,5 +431,28 @@ public class CreateNodes {
      */
     public List<CyNode> getExchgReactions(){
         return exchgReactions;
+    }
+
+    /**
+     * Get-function
+     * @return the ID of the shared compartment (exchg compartment)
+     */
+    public String getSharedCompId(){
+        return exchgCompID;
+    }
+
+    /**
+     * Get function
+     * @return the set of nodes to ignore
+     */
+    public HashSet<CyNode> getIgnoredNodes(){
+        return ignoredNodes;
+    }
+
+    /**
+     * @return Whether the node is in the set of nodes to ignore
+     */
+    public Boolean isIgnoredNode(CyNode node){
+        return ignoredNodes.contains(node);
     }
 }

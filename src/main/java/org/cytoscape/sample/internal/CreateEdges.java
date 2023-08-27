@@ -64,6 +64,10 @@ public class CreateEdges {
      * The boolean defining if the submitted flux map is fva or fba
      */
     private boolean isFva;
+    /**
+     * The ID of the shared compartment (exchg compartment)
+     */
+    private String exchgCompID;
 
     /**
      * Adds all the corresponding edges and their attributes to the new network.
@@ -80,6 +84,7 @@ public class CreateEdges {
         this.newNetwork = newNetwork;
         this.oldNetwork = oldNetwork;
         this.createNodes = createNodes;
+        this.exchgCompID = createNodes.getSharedCompId();
         this.cyNodeList = oldNetwork.getNodeList();
         this.oldExternalNodes = createNodes.getExtNodes();
         this.oldExchgReactionNodes = createNodes.getExchgReactions();
@@ -133,6 +138,7 @@ public class CreateEdges {
             List<CyNode> products = neighborMap.get("products");
 
             for (CyNode reactant : reactants) {
+                if (createNodes.isIgnoredNode(reactant)) {continue;}
                 // Is it internal or external? (is compartment exchg?)
                 String sbmlTypeSource = createNodes.getSbmlTypeFromNode(reactant);
                 // Skip non metabolite nodes
@@ -141,7 +147,7 @@ public class CreateEdges {
                 String organismSource = createNodes.getOrganismFromNode(reactant);
                 CyNode compSource = createNodes.getCompNodeFromName(organismSource);
                 CyNode sourceMetNode;
-                if (Objects.equals(organismSource, "exchg")) {
+                if (Objects.equals(organismSource, this.exchgCompID)) {
                     sourceMetNode = createNodes.getNewNode(reactant);
                 }
                 else {
@@ -152,6 +158,7 @@ public class CreateEdges {
 
                 //Iterate over all targets of the reaction
                 for (CyNode product : products) {
+                    if (createNodes.isIgnoredNode(product)) {continue;}
                     // Is it internal or external? (is compartment exchg?)
                     String sbmlTypeTarget = createNodes.getSbmlTypeFromNode(product);
                     // Skip non metabolite nodes
@@ -162,7 +169,7 @@ public class CreateEdges {
                     String organismTarget = createNodes.getOrganismFromNode(product);
                     CyNode compTarget = createNodes.getCompNodeFromName(organismTarget);
                     CyNode targetMetNode;
-                    if (Objects.equals(organismTarget, "exchg")) {
+                    if (Objects.equals(organismTarget, this.exchgCompID)) {
                         targetMetNode = createNodes.getNewNode(product);
                     } else {
                         targetMetNode = compTarget;
@@ -187,57 +194,6 @@ public class CreateEdges {
         }
     }
 
-    /**
-     * This method makes edges between external nodes and the sources of edges going to these nodes, or between external nodes and the internal compartment nodes
-     * if the sources are located inside a compartment. It loops through all external nodes and their sources, using their corresponding
-     * old and new nodes to create edges, and sets the edge attributes.
-     */
-    private void makeEdgesToNode() {
-        // here we loop through all external Nodes and get their Sources, using these we make edges the external Nodes
-        // or compartment Nodes if the Source is in a compartment
-
-        for (CyNode oldExchgNode : createNodes.getExchgNodes()) {
-
-            List<CyNode> oldSources = getAllNeighbors(oldExchgNode, "Sources");
-
-            for (CyNode oSource : oldSources) {
-
-                if (oldExternalNodes.contains(oSource)) {
-
-
-                    CyEdge edge = makeEdge(createNodes.getNewNode(oSource), createNodes.getNewNode(oldExchgNode));
-                    edgeTributes(edge, oSource, oldExchgNode);
-                } else {
-
-                    String organism = createNodes.getOrganismFromNode(oSource);
-                    CyNode comp = createNodes.getCompNodeFromName(organism);
-                    CyEdge edge = makeEdge(comp, createNodes.getNewNode(oldExchgNode));
-                    edgeTributesComp(edge, oSource, oldExchgNode, true);
-
-                }
-            }
-        }
-    }
-
-    /**
-     * Loops through all external Nodes and gets their targets, using these we make edges from the external Nodes or
-     * compartment Nodes if the target is in a compartment.
-     */
-    private void makeEdgesFromNode () {
-        // here we loop through all external Nodes and get their Targets, using these we make edges the external Nodes
-        // or compartment Nodes if the Target is in a compartment
-        for (CyNode oldExchgNode : createNodes.getExchgNodes()) {
-            List<CyNode> oldTargets = getAllNeighbors(oldExchgNode, "Targets");
-            for (CyNode oTarget : oldTargets) {
-
-                String organism = createNodes.getOrganismFromNode(oTarget);
-                CyNode comp = createNodes.getCompNodeFromName(organism);
-
-                CyEdge edge = makeEdge(createNodes.getNewNode(oldExchgNode), comp);
-                edgeTributesComp(edge, oldExchgNode, oTarget, false);
-            }
-        }
-    }
 
     /**
      * Creates and returns a map that maps each node in the cyNodeList to a list of its outgoing edges.
@@ -248,6 +204,7 @@ public class CreateEdges {
         // this method is used to create the Map which maps a Node to its outgoing Edges
         HashMap<CyNode, List<CyEdge>> outEdges = new HashMap<>();
         for (CyNode cyNode : cyNodeList) {
+            if (createNodes.isIgnoredNode(cyNode)) {continue;}
             outEdges.put(cyNode, oldNetwork.getAdjacentEdgeList(cyNode, CyEdge.Type.OUTGOING));
         }
         return outEdges;
@@ -262,6 +219,7 @@ public class CreateEdges {
         // this method is used to create the Map which maps a Node to its incoming Edges
         HashMap<CyNode, List<CyEdge>> inEdges = new HashMap<>();
         for (CyNode cyNode : cyNodeList) {
+            if (createNodes.isIgnoredNode(cyNode)) {continue;}
             inEdges.put(cyNode, oldNetwork.getAdjacentEdgeList(cyNode, CyEdge.Type.INCOMING));
         }
         return inEdges;
@@ -411,58 +369,6 @@ public class CreateEdges {
         newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("stoichiometry", stoichiometry);
     }
 
-    /**
-     * Adds attributes of an edge to its entry in the edge-table (external Node to comp Node).
-     *
-     * @param currentEdge The edge whose attributes are to be added.
-     * @param oldSource The old source node of the edge.
-     * @param oldTarget The old target node of the edge.
-     * @param sourceIsComp A boolean indicating if the old source node is a compartment.
-     */
-    private void edgeTributesComp (CyEdge currentEdge, CyNode oldSource, CyNode oldTarget,boolean sourceIsComp){
-        // here all the attributes of an Edge are added to its entry in the edge-table (external Node to comp Node)
-        if (sourceIsComp) {
-            String sourceName = createNodes.getCompNameFromNode(createNodes.getIntCompNodeForAnyNode(oldSource));
-            String targetName = oldNetwork.getDefaultNodeTable().getRow(oldTarget.getSUID()).get("shared name", String.class);
-            String sharedName = oldNetwork.getDefaultNodeTable().getRow(oldSource.getSUID()).get("shared name", String.class);
-            String fluxKey = getFluxKey(oldSource);
-            Double fluxValue = getFlux(fluxKey, false);
-            if(mapAdded) {
-                setFlux(oldTarget, fluxValue);
-            }
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("source", sourceName);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("target", targetName);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("shared name", sharedName);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("shared interaction", "EXPORT");
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("flux", fluxValue);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("name", fluxKey);
-        } else {
-            String targetName = createNodes.getCompNameFromNode(createNodes.getIntCompNodeForAnyNode(oldTarget));
-            String sourceName = oldNetwork.getDefaultNodeTable().getRow(oldSource.getSUID()).get("shared name", String.class);
-            String sharedName = sourceName.concat(" - Import");
-            String fluxKey = getFluxKey(oldTarget);
-            Double fluxValue = getFlux(fluxKey, false);
-            if(mapAdded) {
-                setFlux(oldSource, fluxValue);
-            }
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("source", sourceName);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("target", targetName);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("shared name", sharedName);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("shared interaction", "IMPORT");
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("flux", fluxValue);
-            newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("name", fluxKey);
-        }
-
-        List<CyEdge> oldEdges = oldNetwork.getConnectingEdgeList(oldSource, oldTarget, CyEdge.Type.ANY);
-        Double stoichiometry = 0.0;
-        for (CyEdge oldEdge : oldEdges) {
-            Double current_stoichiometry = oldNetwork.getDefaultEdgeTable().getRow(oldEdge.getSUID()).get("stoichiometry", Double.class);
-            if (current_stoichiometry != null) {
-                stoichiometry += current_stoichiometry;
-            }
-        }
-        newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("stoichiometry", stoichiometry);
-    }
 
     /**
      * Adds attributes of an edge to its entry in the edge-table (external Node to comp Node).
