@@ -174,6 +174,9 @@ public class CreateEdges {
                     } else {
                         targetMetNode = compTarget;
                     }
+
+                    if (Objects.equals(organismSource, organismTarget)) {continue;}
+
                     if (!targetsVisited.contains(targetMetNode)) {
                         List<CyEdge> oldEdges = oldNetwork.getConnectingEdgeList(reactant, product, CyEdge.Type.ANY);
                         double stoichiometry = 0.0d;

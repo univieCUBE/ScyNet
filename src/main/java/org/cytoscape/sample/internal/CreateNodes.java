@@ -147,8 +147,8 @@ public class CreateNodes {
     }
 
     private String getExchgCompID() {
-        String compId = "medium";
         List<CyNode> allNodes = oldNetwork.getNodeList();
+        String compId = "";
         for (CyNode currentNode : allNodes) {
             String node_type = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("sbml type", String.class);
             String cyId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("cyId", String.class);
@@ -156,6 +156,9 @@ public class CreateNodes {
             if (node_type != null && Objects.equals(node_type, "parameter") && Objects.equals(cyId, "shared_compartment_id")) {
                 compId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("shared name", String.class);
             }
+        }
+        if (Objects.equals(compId, "")) {
+            compId = "medium";
         }
         return compId;
     }
@@ -173,6 +176,8 @@ public class CreateNodes {
             // from compartment we can check if it is exchange
             long suid = currentNode.getSUID();
             CyRow node_row = oldNetwork.getDefaultNodeTable().getRow(suid);
+            String sbml_type = node_row.get("sbml type", String.class);
+            if (!Objects.equals(sbml_type, "species")) {continue;}
             String compartment = node_row.get("sbml compartment", String.class);
             if (Objects.equals(compartment, this.exchgCompID)) {exchangeNode.add(currentNode);}
         }
