@@ -49,6 +49,7 @@ public class CyActivator extends AbstractCyActivator {
 		CyNetworkViewFactory cyNetworkViewFactoryServiceRef = getService(bc,CyNetworkViewFactory.class);
 		CyNetworkViewManager cyNetworkViewManagerServiceRef = getService(bc,CyNetworkViewManager.class);
 		UndoSupport undo = getService(bc, UndoSupport.class);
+		CyLayoutAlgorithmManager layoutManager = getService(bc, CyLayoutAlgorithmManager.class);
 
 		// Set properties for creating a network view task factory
 		Properties createNetworkViewTaskFactoryProps = new Properties();
@@ -59,7 +60,7 @@ public class CyActivator extends AbstractCyActivator {
 
 		// Get all the networks and create a network view task factory for each network
 
-		CreateNetworkViewTaskFactory createNetworkViewTaskFactory = new CreateNetworkViewTaskFactory(cyNetworkNamingServiceRef, cyNetworkFactoryServiceRef, cyNetworkManagerServiceRef, cyNetworkViewFactoryServiceRef, cyNetworkViewManagerServiceRef, dataSourceManager, cyApplicationManager, myButton);
+		CreateNetworkViewTaskFactory createNetworkViewTaskFactory = new CreateNetworkViewTaskFactory(cyNetworkNamingServiceRef, cyNetworkFactoryServiceRef, cyNetworkManagerServiceRef, cyNetworkViewFactoryServiceRef, cyNetworkViewManagerServiceRef, layoutManager, dataSourceManager, cyApplicationManager, myButton);
 		createNetworkViewTaskFactoryProps.setProperty("title", "Create Simplified Community Network");
 		registerService(bc, createNetworkViewTaskFactory, TaskFactory.class, createNetworkViewTaskFactoryProps);
 
@@ -76,7 +77,6 @@ public class CyActivator extends AbstractCyActivator {
 		registerService(bc, scynetLayout, CyLayoutAlgorithm.class, customLayoutProps);
 
 		// ApplyCustomLayoutTaskFactory service
-		CyLayoutAlgorithmManager layoutManager = getService(bc, CyLayoutAlgorithmManager.class);
 		ApplyScynetLayoutTaskFactory applyLayoutTaskFactory = new ApplyScynetLayoutTaskFactory(layoutManager);
 
 		Properties applyCustomLayoutProperties = new Properties();

@@ -7,7 +7,10 @@ import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 
 import java.io.*;
@@ -43,6 +46,10 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 */
 	private final CyNetwork currentNetwork;
 	/**
+	 * The layout algorithm manager in Cytoscape
+	 */
+	private final CyLayoutAlgorithmManager cyLayoutAlgorithmManager;
+	/**
 	 * TSV-map created from the TSV-file if it was added
 	 */
 	private final HashMap<String, Double> tsvMap;
@@ -66,12 +73,13 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 * @param showOnlyCrossfeeding the boolean of the toggle-button (Show 'crossfeeding')
 	 */
 	public CreateNetworkViewTask(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
-								 CyNetworkViewFactory cnvf, final CyNetworkViewManager networkViewManager,
+								 CyNetworkViewFactory cnvf, final CyNetworkViewManager networkViewManager, CyLayoutAlgorithmManager cyLayoutAlgorithmManager,
 								 HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager, Boolean isFva) {
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
 		this.networkManager = networkManager;
+		this.cyLayoutAlgorithmManager = cyLayoutAlgorithmManager;
 		this.cyNetworkNaming = cyNetworkNaming;
 		this.currentNetwork = cyApplicationManager.getCurrentNetwork();
 		this.tsvMap = tsvMap;
@@ -105,5 +113,15 @@ public class CreateNetworkViewTask extends AbstractTask {
 		}
 		// Here the color/size/label etc. of the Nodes and Edges is changed
 		Aesthetics aesthetics = new Aesthetics(createNodes, newNetwork, myView, showOnlyCrossfeeding, tsvMap, isFva);
+
+		// Apply the scynet layout
+		ApplyScynetLayoutTaskFactory scynetLayoutTF = new ApplyScynetLayoutTaskFactory(cyLayoutAlgorithmManager);
+		TaskIterator tItr = scynetLayoutTF.createTaskIterator(myView);
+		Task nextTask = tItr.next();
+		try {
+			nextTask.run(monitor);
+		} catch (Exception e) {
+			throw new RuntimeException("Could not finish layout", e);
+		}
 	}
 }

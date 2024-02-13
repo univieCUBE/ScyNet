@@ -5,6 +5,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CyNetworkNaming;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.application.CyApplicationManager;
@@ -33,6 +34,10 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	 * The manager for network views in Cytoscape
 	 */
 	private final CyNetworkViewManager networkViewManager;
+	/**
+	 * The layout algorithm manager in Cytoscape
+	 */
+	private final CyLayoutAlgorithmManager cyLayoutAlgorithmManager;
 	/**
 	 * The manager for networks in Cytoscape
 	 */
@@ -63,12 +68,13 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	 * @param myButton the toggle button to display the network view in the app
 	 */
 	public CreateNetworkViewTaskFactory(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
-										CyNetworkViewFactory cnvf, CyNetworkViewManager networkViewManager, DataSourceManager dataSourceManager,
+										CyNetworkViewFactory cnvf, CyNetworkViewManager networkViewManager, CyLayoutAlgorithmManager cyLayoutAlgorithmManager, DataSourceManager dataSourceManager,
 										CyApplicationManager cyApplicationManager, JToggleButton myButton) {
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
 		this.networkManager = networkManager;
+		this.cyLayoutAlgorithmManager = cyLayoutAlgorithmManager;
 		this.cyNetworkNaming = cyNetworkNaming;
 		this.cyApplicationManager = cyApplicationManager;
 		this.showOnlyCrossfeeding = false;
@@ -93,7 +99,7 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	public TaskIterator createTaskIterator() {
 		FileChoosing newChooser = new FileChoosing();
 		HashMap<String, Double> tsvMap = newChooser.makeMap();
-		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, tsvMap, showOnlyCrossfeeding, cyApplicationManager, newChooser.isFva));
+		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, cyLayoutAlgorithmManager, tsvMap, showOnlyCrossfeeding, cyApplicationManager, newChooser.isFva));
 	}
 
 	/**
