@@ -14,10 +14,17 @@ import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.TunableSetter;
 import org.cytoscape.work.undo.UndoSupport;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.cytoscape.application.CyApplicationConfiguration;
 
 import javax.swing.*;
 import java.util.Properties;
+import java.io.File;
+import java.io.FileNotFoundException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -26,6 +33,7 @@ import java.util.Properties;
  services, tasks, and factories for the application to work properly.
  */
 public class CyActivator extends AbstractCyActivator {
+	private static Logger logger;
 
 	/**
 	 * Default constructor for the CyActivator class.
@@ -40,6 +48,14 @@ public class CyActivator extends AbstractCyActivator {
 	 @param bc The bundle context used to register the services.
 	 */
 	public void start(BundleContext bc) {
+		// Initialize the log file
+		Bundle bundle = bc.getBundle();
+		String name = bundle.getSymbolicName();
+		String version = bundle.getVersion().toString();
+
+		logger = LoggerFactory.getLogger(CyActivator.class);
+		logger.info("Starting " + name + " version " + version);
+
 		// Get the necessary services
 		DataSourceManager dataSourceManager = getService(bc, DataSourceManager.class);
 		CyNetworkNaming cyNetworkNamingServiceRef = getService(bc,CyNetworkNaming.class);
