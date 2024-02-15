@@ -13,6 +13,7 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 
+import javax.swing.*;
 import java.io.*;
 import java.util.*;
 
@@ -88,6 +89,26 @@ public class CreateNetworkViewTask extends AbstractTask {
 	}
 
 	public void run(TaskMonitor monitor) throws FileNotFoundException {
+		// Check that the current network is a Cy3sbml network!
+		Set<String> columnNames = CyTableUtil.getColumnNames(currentNetwork.getDefaultNodeTable());
+
+		if (!(columnNames.contains("sbml type") && columnNames.contains("sbml compartment"))) {
+			// Display a warning message that the network is not in the correct format
+			JFrame frame = new JFrame();
+			JOptionPane pane = new JOptionPane(
+					"The selected network is not in Cy3sbml format.\n" +
+							"Please select a network created or imported by Cy3sbml.",
+					JOptionPane.ERROR_MESSAGE
+			);
+			pane.setComponentOrientation(JOptionPane.getRootFrame().getComponentOrientation());
+			JDialog dialog = pane.createDialog(frame, "Error: Wrong Network Format");
+
+			dialog.setModal(false);
+			dialog.setVisible(true);
+			return;
+		}
+
+
 		// HERE I CREATE THE NEW NETWORK WHICH WE FILL WITH NEW STUFF
 		CyNetwork newNetwork = this.cnf.createNetwork();
 

@@ -2,7 +2,7 @@
 <module version="4">
   <component name="FacetManager">
     <facet type="Osmorc" name="OSGi">
-      <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="scynet-0.1.2a1.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="org.cytoscape.sample.internal.CyActivator" bundleSymbolicName="org.cytoscape.scynet" bundleVersion="0.1.2a1" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
+      <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="scynet-0.1.2a2.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="org.cytoscape.sample.internal.CyActivator" bundleSymbolicName="org.cytoscape.scynet" bundleVersion="0.1.2a2" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
           <property key="Export-Package" value="!org.cytoscape.sample.internal.*" />
           <property key="Private-Package" value="org.cytoscape.sample.internal.*" />

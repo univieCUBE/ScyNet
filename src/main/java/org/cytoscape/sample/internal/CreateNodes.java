@@ -5,6 +5,7 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 
+import javax.swing.*;
 import java.util.*;
 
 /**
@@ -156,9 +157,28 @@ public class CreateNodes {
             if (node_type != null && Objects.equals(node_type, "parameter") && Objects.equals(cyId, "shared_compartment_id")) {
                 compId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("shared name", String.class);
             }
+            if (node_type != null && Objects.equals(node_type, "compartment") && Objects.equals(cyId, "medium")) {
+                compId = "medium";
+            }
         }
         if (Objects.equals(compId, "")) {
-            compId = "medium";
+            // Display a warning message that no medium compartment could be found
+            JFrame frame = new JFrame();
+            JOptionPane pane = new JOptionPane(
+                    "No shared exchange compartment could be identified in the network.\n" +
+                            "Please make sure that the network contains either\n" +
+                            "\t- A compartment named 'medium' which acts as shared exchange compartment\n" +
+                            "\t- A parameter 'shared_compartment_id' which is set to the name of\n" +
+                            "\t  the shared exchange compartment" +
+                            "\n\nPlease consult the ScyNet documentation for further information on \n"+
+                            "metabolic model format requirements.",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            pane.setComponentOrientation(JOptionPane.getRootFrame().getComponentOrientation());
+            JDialog dialog = pane.createDialog(frame, "Error: Wrong Network Format");
+
+            dialog.setModal(false);
+            dialog.setVisible(true);
         }
         return compId;
     }
