@@ -1,6 +1,7 @@
 package org.cytoscape.sample.internal;
 
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
@@ -10,8 +11,7 @@ import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskMonitor;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 
@@ -72,9 +72,36 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 					nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, false);
 				}
 			}
+			hideSingletons(currentNetwork);
 
 		}
 
 //
+	}
+
+	private void hideSingletons(CyNetwork currentNetwork) {
+		for (CyNode node : currentNetwork.getNodeList()) {
+			View<CyNode> nodeView = view.getNodeView(node);
+			if (!nodeView.getVisualProperty(BasicVisualLexicon.NODE_VISIBLE)) {
+				continue;
+			} else if (Objects.equals("exchange metabolite", currentNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("type", String.class))) {
+				// Check for visible edges
+				List<CyEdge> edges = currentNetwork.getAdjacentEdgeList(node, CyEdge.Type.ANY);
+				List<CyEdge> visibleEdges = new ArrayList<>();
+
+				for (CyEdge edge : edges) {
+					View<CyEdge> edgeView = view.getEdgeView(edge);
+					if (edgeView.getVisualProperty(BasicVisualLexicon.EDGE_VISIBLE)) {
+						visibleEdges.add(edge);
+						break;
+					}
+				}
+
+				// Hide nodes without visible edges
+				if (visibleEdges.isEmpty()) {
+					nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, false);
+				}
+			}
+		}
 	}
 }
