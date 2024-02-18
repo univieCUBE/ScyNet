@@ -398,6 +398,7 @@ public class CreateEdges {
                 Double maxFluxValue = getFlux(fluxKey, false);
                 newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("min flux", minFluxValue);
                 newNetwork.getDefaultEdgeTable().getRow(currentEdge.getSUID()).set("max flux", maxFluxValue);
+                fluxValue = Math.max(Math.abs(minFluxValue), Math.abs(maxFluxValue));
             }
 
             if (fluxValue != 0.0d) {
