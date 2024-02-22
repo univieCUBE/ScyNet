@@ -3,15 +3,15 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<properties>
-		<bundle.symbolicName>org.cytoscape.scynet</bundle.symbolicName>
-		<bundle.namespace>org.cytoscape.sample.internal</bundle.namespace>
+		<bundle.symbolicName>scynet</bundle.symbolicName>
+		<bundle.namespace>org.scynet</bundle.namespace>
 		<cytoscape.api.version>3.9.0</cytoscape.api.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven-bundle-plugin.version>2.3.4</maven-bundle-plugin.version>
 		<osgi.api.version>4.2.0</osgi.api.version>
 	</properties>
 
-	<groupId>org.cytoscape.sample</groupId>
+	<groupId>org.scynet</groupId>
 	<artifactId>scynet</artifactId>
 	<packaging>bundle</packaging>
 	<version>0.1.2a6</version>

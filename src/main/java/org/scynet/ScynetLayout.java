@@ -1,4 +1,4 @@
-package org.cytoscape.sample.internal;
+package org.scynet;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.CyEdge;
@@ -15,7 +15,7 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.undo.UndoSupport;
-import org.cytoscape.util.swing.MessageDialogs;
+
 import javax.swing.JDialog;
 
 import javax.swing.*;

@@ -1,4 +1,4 @@
-package org.cytoscape.sample.internal;
+package org.scynet;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.task.AbstractNetworkViewTaskFactory;

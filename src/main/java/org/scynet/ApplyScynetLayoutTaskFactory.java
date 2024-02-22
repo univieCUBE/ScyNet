@@ -1,14 +1,10 @@
-package org.cytoscape.sample.internal;
+package org.scynet;
 
 import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TunableSetter;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Applies CustomLayout to the given CyNetworkView with specific Tunable
