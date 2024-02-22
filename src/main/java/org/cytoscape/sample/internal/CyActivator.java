@@ -86,6 +86,12 @@ public class CyActivator extends AbstractCyActivator {
 		toggleShowOnlyCfNodesProperties.setProperty("title", "Toggle Nodes");
 		registerService(bc,toggleShowOnlyCfNodes, NetworkViewTaskFactory.class,toggleShowOnlyCfNodesProperties);
 
+		ToggleEdgeSizeBasedOnFluxTaskFactory toggleEdgeWidth = new ToggleEdgeSizeBasedOnFluxTaskFactory(cyApplicationManager);
+		Properties toggleEdgeWidthProperties = new Properties();
+		toggleEdgeWidthProperties.setProperty("preferredMenu","Apps.SCyNet");
+		toggleEdgeWidthProperties.setProperty("title", "Toggle Edge Width");
+		registerService(bc,toggleEdgeWidth, NetworkViewTaskFactory.class,toggleEdgeWidthProperties);
+
 		ScynetLayout scynetLayout = new ScynetLayout(undo, cyApplicationManager);
 
 		Properties customLayoutProps = new Properties();
