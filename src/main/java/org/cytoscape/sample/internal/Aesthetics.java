@@ -241,6 +241,8 @@ public class Aesthetics {
                         edgeWidth = 10.0d;
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
                     } else {
+                        double edgeWidth = 10.0d;
+                        edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, edgeWidth);
                         edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
                     }
                 } else {
