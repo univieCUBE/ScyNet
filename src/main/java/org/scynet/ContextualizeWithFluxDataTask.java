@@ -119,6 +119,13 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 				currentNetwork.getDefaultEdgeTable().getRow(edge.getSUID()).set("flux", fluxValue);
 			}
 
+			if (isFva) {
+				setCrossFeedingNodeStatusFva(currentNetwork);
+			}
+			else {
+				setCrossFeedingNodeStatus(currentNetwork);
+			}
+
 			// Add styling to edge
 			paintEdges(currentNetwork);
 
@@ -280,7 +287,7 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 	private void setCrossFeedingNodeStatus(CyNetwork newNetwork) {
 		for (CyNode node : newNetwork.getNodeList()) {
 			String nodeType = newNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("type", String.class);
-			if (!Objects.equals(nodeType, "exchange_metabolite")) {
+			if (!Objects.equals(nodeType, "exchange metabolite")) {
 				continue;
 			}
 			List<CyEdge> adjacentEdgeList = newNetwork.getAdjacentEdgeList(node, CyEdge.Type.ANY);
@@ -313,7 +320,7 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 	private void setCrossFeedingNodeStatusFva(CyNetwork newNetwork) {
 		for (CyNode node : newNetwork.getNodeList()) {
 			String nodeType = newNetwork.getDefaultNodeTable().getRow(node.getSUID()).get("type", String.class);
-			if (!Objects.equals(nodeType, "exchange_metabolite")) {
+			if (!Objects.equals(nodeType, "exchange metabolite")) {
 				continue;
 			}
 			Set<String> negativeSet = new HashSet<>();
