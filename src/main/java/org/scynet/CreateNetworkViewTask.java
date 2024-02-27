@@ -151,7 +151,7 @@ public class CreateNetworkViewTask extends AbstractTask {
 		CreateEdges createEdges = new CreateEdges(currentNetwork, newNetwork, createNodes, tsvMap, isFva);
 
 		// Here I add a name to my Network
-		newNetwork.getDefaultNetworkTable().getRow(newNetwork.getSUID()).set("name", cyNetworkNaming.getSuggestedNetworkTitle("Base: " + name));
+		newNetwork.getDefaultNetworkTable().getRow(newNetwork.getSUID()).set("name", cyNetworkNaming.getSuggestedNetworkTitle("ScyNet: " + name));
 		this.networkManager.addNetwork(newNetwork);
 
 		final Collection<CyNetworkView> views = networkViewManager.getNetworkViews(newNetwork);
