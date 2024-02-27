@@ -14,7 +14,7 @@
 	<groupId>org.scynet</groupId>
 	<artifactId>scynet</artifactId>
 	<packaging>bundle</packaging>
-	<version>0.1.2a7</version>
+	<version>0.1.2a8</version>
 	
 	<name>ScyNet</name>
 

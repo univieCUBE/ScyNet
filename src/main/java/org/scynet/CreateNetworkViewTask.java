@@ -4,11 +4,11 @@ package org.scynet;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.*;
 import org.cytoscape.session.CyNetworkNaming;
+import org.cytoscape.task.AbstractNetworkTask;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
@@ -22,7 +22,7 @@ import java.util.*;
 /**
  * A task-class which executes all the needed steps to create a new network-view.
  */
-public class CreateNetworkViewTask extends AbstractTask {
+public class CreateNetworkViewTask extends AbstractNetworkTask {
 
 	/**
 	 * The factory for creating networks
@@ -75,9 +75,10 @@ public class CreateNetworkViewTask extends AbstractTask {
 	 * @param tsvMap the loaded TSV-file for the Fluxes
 	 * @param showOnlyCrossfeeding the boolean of the toggle-button (Show 'crossfeeding')
 	 */
-	public CreateNetworkViewTask(CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
+	public CreateNetworkViewTask(CyNetwork network, CyNetworkNaming cyNetworkNaming, CyNetworkFactory cnf, CyNetworkManager networkManager,
 								 CyNetworkViewFactory cnvf, final CyNetworkViewManager networkViewManager, CyLayoutAlgorithmManager cyLayoutAlgorithmManager,
 								 HashMap<String, Double> tsvMap, boolean showOnlyCrossfeeding, CyApplicationManager cyApplicationManager, Boolean isFva) {
+		super(network);
 		this.cnf = cnf;
 		this.cnvf = cnvf;
 		this.networkViewManager = networkViewManager;
@@ -90,6 +91,7 @@ public class CreateNetworkViewTask extends AbstractTask {
 		this.showOnlyCrossfeeding = showOnlyCrossfeeding;
 	}
 
+	@Override
 	public void run(TaskMonitor monitor) throws FileNotFoundException {
 		if (currentNetwork == null) {
 			// Display a warning message that the network is not in the correct format

@@ -7,6 +7,7 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.task.NetworkViewTaskFactory;
+import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -74,7 +75,7 @@ public class CyActivator extends AbstractCyActivator {
 
 		CreateNetworkViewTaskFactory createNetworkViewTaskFactory = new CreateNetworkViewTaskFactory(cyNetworkNamingServiceRef, cyNetworkFactoryServiceRef, cyNetworkManagerServiceRef, cyNetworkViewFactoryServiceRef, cyNetworkViewManagerServiceRef, layoutManager, dataSourceManager, cyApplicationManager, myButton);
 		createNetworkViewTaskFactoryProps.setProperty("title", "Create Simplified Community Network");
-		registerService(bc, createNetworkViewTaskFactory, TaskFactory.class, createNetworkViewTaskFactoryProps);
+		registerService(bc, createNetworkViewTaskFactory, NetworkTaskFactory.class, createNetworkViewTaskFactoryProps);
 
 		ContextualizeWithFluxDataTaskFactory contextualizeFlux = new ContextualizeWithFluxDataTaskFactory(cyApplicationManager, cyNetworkManagerServiceRef, cyNetworkNamingServiceRef, layoutManager);
 		Properties contextualizeFluxProperties = new Properties();

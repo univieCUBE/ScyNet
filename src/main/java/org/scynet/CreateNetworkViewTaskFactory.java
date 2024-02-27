@@ -2,13 +2,16 @@ package org.scynet;
 
 import org.cytoscape.io.datasource.DataSourceManager;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CyNetworkNaming;
+import org.cytoscape.task.AbstractNetworkTaskFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.work.AbstractTaskFactory;
+import org.cytoscape.task.AbstractNetworkViewTaskFactory;
 import org.cytoscape.work.TaskIterator;
 
 import javax.swing.*;
@@ -19,7 +22,7 @@ import java.util.HashMap;
 /**
  * A task factory to create a task that creates a new network view in Cytoscape based on the current network and a specified data source.
  */
-public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
+public class CreateNetworkViewTaskFactory extends AbstractNetworkTaskFactory {
 
 	/**
 	 * The factory for creating networks
@@ -95,10 +98,10 @@ public class CreateNetworkViewTaskFactory extends AbstractTaskFactory {
 	 *
 	 * @return a task iterator for the CreateNetworkViewTask
 	 */
-	public TaskIterator createTaskIterator() {
-		FileChoosing newChooser = new FileChoosing();
-		HashMap<String, Double> tsvMap = newChooser.makeMap();
-		return new TaskIterator(new CreateNetworkViewTask(cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, cyLayoutAlgorithmManager, tsvMap, showOnlyCrossfeeding, cyApplicationManager, newChooser.isFva));
+	public TaskIterator createTaskIterator(CyNetwork network) {
+		//FileChoosing newChooser = new FileChoosing();
+		HashMap<String, Double> tsvMap = new HashMap<String, Double>(); // mimics newChooser.makeMap();
+		return new TaskIterator(new CreateNetworkViewTask(network, cyNetworkNaming, cnf, networkManager, cnvf, networkViewManager, cyLayoutAlgorithmManager, tsvMap, showOnlyCrossfeeding, cyApplicationManager, false));
 	}
 
 	/**
