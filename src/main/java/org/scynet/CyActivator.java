@@ -76,6 +76,12 @@ public class CyActivator extends AbstractCyActivator {
 		createNetworkViewTaskFactoryProps.setProperty("title", "Create Simplified Community Network");
 		registerService(bc, createNetworkViewTaskFactory, TaskFactory.class, createNetworkViewTaskFactoryProps);
 
+		ContextualizeWithFluxDataTaskFactory contextualizeFlux = new ContextualizeWithFluxDataTaskFactory(cyApplicationManager);
+		Properties contextualizeFluxProperties = new Properties();
+		contextualizeFluxProperties.setProperty("preferredMenu","Apps.SCyNet");
+		contextualizeFluxProperties.setProperty("title", "Contextualize with Flux Data");
+		registerService(bc,contextualizeFlux, NetworkViewTaskFactory.class,contextualizeFluxProperties);
+
 		ToggleShowOnlyCfNodesTaskFactory toggleShowOnlyCfNodes = new ToggleShowOnlyCfNodesTaskFactory(cyApplicationManager);
 		Properties toggleShowOnlyCfNodesProperties = new Properties();
 		toggleShowOnlyCfNodesProperties.setProperty("preferredMenu","Apps.SCyNet");

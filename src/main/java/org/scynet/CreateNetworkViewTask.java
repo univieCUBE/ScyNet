@@ -134,16 +134,16 @@ public class CreateNetworkViewTask extends AbstractTask {
 		String name;
 		if (oldRootNetwork != null) {
 			String oldName = oldRootNetwork.getRow(oldRootNetwork).get(CyNetwork.NAME, String.class);
-			name = "ScyNet: " + String.format("%s", oldName);
+			name = String.format("%s", oldName);
 		}
 		else {
-			name = "ScyNet: Simplified Community Network";
+			name = "Simplified Community Network";
 		}
 
 		// root network
 		CyRootNetwork rootNetwork = ((CySubNetwork) newNetwork).getRootNetwork();
 		if (rootNetwork != null) {
-			rootNetwork.getRow(rootNetwork).set(CyNetwork.NAME, String.format("%s", name));
+			rootNetwork.getRow(rootNetwork).set(CyNetwork.NAME, String.format("%s", "ScyNet: " + name));
 		}
 
 		// My Code goes here
@@ -151,7 +151,7 @@ public class CreateNetworkViewTask extends AbstractTask {
 		CreateEdges createEdges = new CreateEdges(currentNetwork, newNetwork, createNodes, tsvMap, isFva);
 
 		// Here I add a name to my Network
-		newNetwork.getDefaultNetworkTable().getRow(newNetwork.getSUID()).set("name", cyNetworkNaming.getSuggestedNetworkTitle("Simplified Network-view"));
+		newNetwork.getDefaultNetworkTable().getRow(newNetwork.getSUID()).set("name", cyNetworkNaming.getSuggestedNetworkTitle("Base: " + name));
 		this.networkManager.addNetwork(newNetwork);
 
 		final Collection<CyNetworkView> views = networkViewManager.getNetworkViews(newNetwork);
