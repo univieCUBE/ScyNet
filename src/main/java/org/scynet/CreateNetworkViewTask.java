@@ -110,6 +110,9 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 		}
 		// Check that the current network is a Cy3sbml network!
 		Set<String> columnNames = CyTableUtil.getColumnNames(currentNetwork.getDefaultNodeTable());
+		monitor.setTitle("ScyNet network simplification");
+		monitor.setProgress(0.0d);
+		monitor.showMessage(TaskMonitor.Level.INFO, "Starting network simplification");
 
 		if (!(columnNames.contains("sbml type") && columnNames.contains("sbml compartment"))) {
 			// Display a warning message that the network is not in the correct format
@@ -149,7 +152,11 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 		}
 
 		// My Code goes here
+		monitor.setProgress(0.1d);
+		monitor.showMessage(TaskMonitor.Level.INFO, "Creating nodes");
 		CreateNodes createNodes = new CreateNodes(currentNetwork, newNetwork);
+		monitor.setProgress(0.2d);
+		monitor.showMessage(TaskMonitor.Level.INFO, "Creating edges");
 		CreateEdges createEdges = new CreateEdges(currentNetwork, newNetwork, createNodes, tsvMap, isFva);
 
 		// Here I add a name to my Network

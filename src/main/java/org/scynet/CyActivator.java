@@ -20,8 +20,8 @@ import org.osgi.framework.BundleContext;
 import javax.swing.*;
 import java.util.Properties;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
  services, tasks, and factories for the application to work properly.
  */
 public class CyActivator extends AbstractCyActivator {
-	private static Logger logger;
 
 	/**
 	 * Default constructor for the CyActivator class.
@@ -50,7 +49,7 @@ public class CyActivator extends AbstractCyActivator {
 		String name = bundle.getSymbolicName();
 		String version = bundle.getVersion().toString();
 
-		logger = LoggerFactory.getLogger(CyActivator.class);
+		final Logger logger = Logger.getLogger(CyUserLog.NAME);
 		logger.info("Starting " + name + " version " + version);
 
 		// Get the necessary services
