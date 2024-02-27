@@ -12,6 +12,8 @@ import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
+import org.cytoscape.model.subnetwork.CyRootNetwork;
+import org.cytoscape.model.subnetwork.CySubNetwork;
 
 import javax.swing.*;
 import java.io.*;
@@ -126,6 +128,23 @@ public class CreateNetworkViewTask extends AbstractTask {
 
 		// HERE I CREATE THE NEW NETWORK WHICH WE FILL WITH NEW STUFF
 		CyNetwork newNetwork = this.cnf.createNetwork();
+
+		// root network
+		CyRootNetwork oldRootNetwork = ((CySubNetwork) currentNetwork).getRootNetwork();
+		String name;
+		if (oldRootNetwork != null) {
+			String oldName = oldRootNetwork.getRow(oldRootNetwork).get(CyNetwork.NAME, String.class);
+			name = "ScyNet: " + String.format("%s", oldName);
+		}
+		else {
+			name = "ScyNet: Simplified Community Network";
+		}
+
+		// root network
+		CyRootNetwork rootNetwork = ((CySubNetwork) newNetwork).getRootNetwork();
+		if (rootNetwork != null) {
+			rootNetwork.getRow(rootNetwork).set(CyNetwork.NAME, String.format("%s", name));
+		}
 
 		// My Code goes here
 		CreateNodes createNodes = new CreateNodes(currentNetwork, newNetwork);
