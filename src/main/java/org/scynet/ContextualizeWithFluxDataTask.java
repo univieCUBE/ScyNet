@@ -92,6 +92,10 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 			return;
 		}
 
+		taskMonitor.setTitle("Contextualize network with flux data");
+		taskMonitor.setProgress(0.0d);
+		taskMonitor.showMessage(TaskMonitor.Level.INFO, "Checking network compatibility");
+
 		//Check if type and cross-fed columns exist
 		CyNetwork currentNetwork = cyApplicationManager.getCurrentNetwork();
 		Set<String> columnNames = CyTableUtil.getColumnNames(currentNetwork.getDefaultEdgeTable());
@@ -102,6 +106,9 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 			}
 
 			// Add flux to edge
+			taskMonitor.setProgress(0.1d);
+			taskMonitor.showMessage(TaskMonitor.Level.INFO, "Setting flux values for edges");
+
 			for (CyEdge edge : currentNetwork.getEdgeList()) {
 				String fluxKey = currentNetwork.getDefaultEdgeTable().getRow(edge.getSUID()).get("name", String.class);
 				Double fluxValue;
@@ -119,6 +126,10 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 				currentNetwork.getDefaultEdgeTable().getRow(edge.getSUID()).set("flux", fluxValue);
 			}
 
+			// Set cross-feeding status
+			taskMonitor.setProgress(0.4d);
+			taskMonitor.showMessage(TaskMonitor.Level.INFO, "Calculating cross-fed metabolites");
+
 			if (isFva) {
 				setCrossFeedingNodeStatusFva(currentNetwork);
 			}
@@ -127,9 +138,14 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 			}
 
 			// Add styling to edge
+			taskMonitor.setProgress(0.6d);
+			taskMonitor.showMessage(TaskMonitor.Level.INFO, "Styling edges according to flux");
 			paintEdges(currentNetwork);
 
 			// Apply the scynet layout
+			taskMonitor.setProgress(0.8d);
+			taskMonitor.showMessage(TaskMonitor.Level.INFO, "Applying ScyNet layout");
+
 			ApplyScynetLayoutTaskFactory scynetLayoutTF = new ApplyScynetLayoutTaskFactory(cyLayoutAlgorithmManager);
 			TaskIterator tItr = scynetLayoutTF.createTaskIterator(view);
 			Task nextTask = tItr.next();

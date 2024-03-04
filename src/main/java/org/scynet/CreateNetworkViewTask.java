@@ -155,7 +155,7 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 		monitor.setProgress(0.1d);
 		monitor.showMessage(TaskMonitor.Level.INFO, "Creating nodes");
 		CreateNodes createNodes = new CreateNodes(currentNetwork, newNetwork);
-		monitor.setProgress(0.2d);
+		monitor.setProgress(0.4d);
 		monitor.showMessage(TaskMonitor.Level.INFO, "Creating edges");
 		CreateEdges createEdges = new CreateEdges(currentNetwork, newNetwork, createNodes, tsvMap, isFva);
 
@@ -176,9 +176,15 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 			System.out.println("This Network View already existed.");
 		}
 		// Here the color/size/label etc. of the Nodes and Edges is changed
+		monitor.setProgress(0.7d);
+		monitor.showMessage(TaskMonitor.Level.INFO, "Styling nodes and edges");
+
 		Aesthetics aesthetics = new Aesthetics(createNodes, newNetwork, myView, showOnlyCrossfeeding, tsvMap, isFva);
 
 		// Apply the scynet layout
+		monitor.setProgress(0.9d);
+		monitor.showMessage(TaskMonitor.Level.INFO, "Applying ScyNet layout");
+
 		ApplyScynetLayoutTaskFactory scynetLayoutTF = new ApplyScynetLayoutTaskFactory(cyLayoutAlgorithmManager);
 		TaskIterator tItr = scynetLayoutTF.createTaskIterator(myView);
 		Task nextTask = tItr.next();
