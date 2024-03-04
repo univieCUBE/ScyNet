@@ -65,7 +65,7 @@ public class CyActivator extends AbstractCyActivator {
 
 		// Set properties for creating a network view task factory
 		Properties createNetworkViewTaskFactoryProps = new Properties();
-		createNetworkViewTaskFactoryProps.setProperty("preferredMenu","Apps.SCyNet");
+		createNetworkViewTaskFactoryProps.setProperty("preferredMenu","Apps.ScyNet");
 
 		// Create a JFrame and JToggleButton for the new menu item
 		JToggleButton myButton = new JToggleButton("Toggle only 'crossfeeding' Nodes");
@@ -78,25 +78,25 @@ public class CyActivator extends AbstractCyActivator {
 
 		ContextualizeWithFluxDataTaskFactory contextualizeFlux = new ContextualizeWithFluxDataTaskFactory(cyApplicationManager, cyNetworkManagerServiceRef, cyNetworkNamingServiceRef, layoutManager);
 		Properties contextualizeFluxProperties = new Properties();
-		contextualizeFluxProperties.setProperty("preferredMenu","Apps.SCyNet");
+		contextualizeFluxProperties.setProperty("preferredMenu","Apps.ScyNet");
 		contextualizeFluxProperties.setProperty("title", "Contextualize with Flux Data");
 		registerService(bc,contextualizeFlux, NetworkViewTaskFactory.class,contextualizeFluxProperties);
 
 		ToggleShowOnlyCfNodesTaskFactory toggleShowOnlyCfNodes = new ToggleShowOnlyCfNodesTaskFactory(cyApplicationManager);
 		Properties toggleShowOnlyCfNodesProperties = new Properties();
-		toggleShowOnlyCfNodesProperties.setProperty("preferredMenu","Apps.SCyNet");
+		toggleShowOnlyCfNodesProperties.setProperty("preferredMenu","Apps.ScyNet");
 		toggleShowOnlyCfNodesProperties.setProperty("title", "Toggle Non-Cross-Fed Metabolite Visibility");
 		registerService(bc,toggleShowOnlyCfNodes, NetworkViewTaskFactory.class,toggleShowOnlyCfNodesProperties);
 
 		ToggleEdgeSizeBasedOnFluxTaskFactory toggleEdgeWidth = new ToggleEdgeSizeBasedOnFluxTaskFactory(cyApplicationManager);
 		Properties toggleEdgeWidthProperties = new Properties();
-		toggleEdgeWidthProperties.setProperty("preferredMenu","Apps.SCyNet");
+		toggleEdgeWidthProperties.setProperty("preferredMenu","Apps.ScyNet");
 		toggleEdgeWidthProperties.setProperty("title", "Toggle Edge Width Relative to Flux");
 		registerService(bc,toggleEdgeWidth, NetworkViewTaskFactory.class,toggleEdgeWidthProperties);
 
 		ToggleZeroFluxEdgesTaskFactory toggleZeroFlux = new ToggleZeroFluxEdgesTaskFactory(cyApplicationManager);
 		Properties toggleZeroFluxProperties = new Properties();
-		toggleZeroFluxProperties.setProperty("preferredMenu","Apps.SCyNet");
+		toggleZeroFluxProperties.setProperty("preferredMenu","Apps.ScyNet");
 		toggleZeroFluxProperties.setProperty("title", "Toggle Zero Flux Edge Visibility");
 		registerService(bc,toggleZeroFlux, NetworkViewTaskFactory.class,toggleZeroFluxProperties);
 
@@ -110,7 +110,7 @@ public class CyActivator extends AbstractCyActivator {
 		ApplyScynetLayoutTaskFactory applyLayoutTaskFactory = new ApplyScynetLayoutTaskFactory(layoutManager);
 
 		Properties applyCustomLayoutProperties = new Properties();
-		applyCustomLayoutProperties.setProperty("preferredMenu","Apps.SCyNet");
+		applyCustomLayoutProperties.setProperty("preferredMenu","Apps.ScyNet");
 		applyCustomLayoutProperties.setProperty("title", "Apply ScyNet Layout");
 		registerService(bc, applyLayoutTaskFactory, NetworkViewTaskFactory.class, applyCustomLayoutProperties);
 
