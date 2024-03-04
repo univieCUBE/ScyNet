@@ -13,22 +13,29 @@ import org.cytoscape.work.TaskMonitor;
 
 import java.util.*;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 
+	private final Logger logger;
 	private CyApplicationManager cyApplicationManager;
 
 	public ToggleShowOnlyCfNodesTask(CyNetworkView view, CyApplicationManager cyApplicationManager){
 		super(view);
+		this.logger = Logger.getLogger(CyUserLog.NAME);
 		this.cyApplicationManager = cyApplicationManager;
 	}
 	
 	@Override
 	public void run(final TaskMonitor taskMonitor) {
-		if (cyApplicationManager.getCurrentNetwork() == null){			
+		if (cyApplicationManager.getCurrentNetwork() == null){
+			logger.warn("No network selected. Nothing to do.");
 			return;
 		}
 
 		if(view == null){
+			logger.warn("No network view available for selected network. Nothing to do.");
 			return;
 		}
 
@@ -55,6 +62,7 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 
 
 			if (allHidden) {
+				logger.info("Making all non-cross-feeding nodes visible.");
 				for (CyNode node : nonCrossFedNodes) {
 					View<CyNode> nodeView = view.getNodeView(node);
 					if (nodeView == null) {
@@ -64,6 +72,7 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 				}
 			}
 			else {
+				logger.info("Hiding all non-cross-feeding nodes.");
 				for (CyNode node : nonCrossFedNodes) {
 					View<CyNode> nodeView = view.getNodeView(node);
 					if (nodeView == null) {
@@ -74,6 +83,9 @@ public class ToggleShowOnlyCfNodesTask extends AbstractNetworkViewTask {
 			}
 			hideSingletons(currentNetwork);
 
+		}
+		else {
+			logger.error("The selected network is not in ScyNet format.");
 		}
 
 //

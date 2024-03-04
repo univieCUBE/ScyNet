@@ -20,10 +20,14 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 import static java.lang.Math.abs;
 
 public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 
+	private final Logger logger;
 	private CyApplicationManager cyApplicationManager;
 	/**
 	 * TSV-map created from the TSV-file if it was added
@@ -59,6 +63,7 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 
 	public ContextualizeWithFluxDataTask(CyNetworkView view, CyApplicationManager cyApplicationManager, HashMap<String, Double> tsvMap, Boolean isFva, CyNetworkManager networkManager, CyNetworkNaming cyNetworkNaming, CyLayoutAlgorithmManager cyLayoutAlgorithmManager){
 		super(view);
+		this.logger = Logger.getLogger(CyUserLog.NAME);
 		this.cyApplicationManager = cyApplicationManager;
 		this.tsvMap = tsvMap;
 		this.isFva = isFva;
@@ -84,11 +89,13 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 	
 	@Override
 	public void run(final TaskMonitor taskMonitor) {
-		if (cyApplicationManager.getCurrentNetwork() == null){			
+		if (cyApplicationManager.getCurrentNetwork() == null){
+			logger.warn("No network selected. Nothing to do.");
 			return;
 		}
 
 		if(view == null){
+			logger.warn("No network view available for selected network. Nothing to do.");
 			return;
 		}
 
@@ -102,6 +109,7 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 
 		if (columnNames.contains("sbml id") && columnNames.contains("flux")) {
 			if (tsvMap.isEmpty()) {
+				logger.warn("No flux values in input file. Nothing to do.");
 				return;
 			}
 
@@ -157,6 +165,8 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 
 		} else {
 			// Display a warning message that the network is not in the correct format
+			logger.error("The selected network is not in ScyNet format. " +
+					"Please select a network created by ScyNet.");
 			JFrame frame = new JFrame();
 			JOptionPane pane = new JOptionPane(
 					"The selected network is not in ScyNet format. " +
@@ -406,6 +416,7 @@ public class ContextualizeWithFluxDataTask extends AbstractNetworkViewTask {
 	}
 
 	private void hideSingletons(CyNetwork currentNetwork) {
+		logger.info("Hiding disconnected nodes");
 		for (CyNode node : currentNetwork.getNodeList()) {
 			View<CyNode> nodeView = view.getNodeView(node);
 			if (!nodeView.getVisualProperty(BasicVisualLexicon.NODE_VISIBLE)) {

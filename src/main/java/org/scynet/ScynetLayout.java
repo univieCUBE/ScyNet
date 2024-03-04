@@ -21,7 +21,11 @@ import javax.swing.JDialog;
 import javax.swing.*;
 import java.util.*;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 public class ScynetLayout extends AbstractLayoutAlgorithm {
+	private final Logger logger;
 	/**
 	 * Creates a new MyLayout object.
 	 */
@@ -29,6 +33,7 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 	CyApplicationManager cyApplicationManager;
 	public ScynetLayout(UndoSupport undo, CyApplicationManager cyApplicationManager) {
 		super("scynetLayout","ScyNet Layout", undo);
+		this.logger = Logger.getLogger(CyUserLog.NAME);
 		this.cyApplicationManager = cyApplicationManager;
 	}
 	
@@ -45,6 +50,7 @@ public class ScynetLayout extends AbstractLayoutAlgorithm {
 
 				if (!(columnNames.contains("type") && columnNames.contains("cross-fed"))) {
 					// Display a warning message that the network is not in the correct format
+					logger.error("The selected network is not in ScyNet format.");
 					JFrame frame = new JFrame();
 					JOptionPane pane = new JOptionPane(
 							"The selected network is not in ScyNet format. " +

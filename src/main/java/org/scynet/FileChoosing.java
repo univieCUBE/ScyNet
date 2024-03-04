@@ -8,11 +8,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Objects;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 /**
  * A class used to select a file which is used to create a HashMap, which maps all reactions/edges to a Flux.
  */
 public class FileChoosing {
 
+    private final Logger logger;
     /**
      * The chosen file (should be TSV-format)
      */
@@ -25,6 +29,7 @@ public class FileChoosing {
      */
     public FileChoosing()
     {
+        this.logger = Logger.getLogger(CyUserLog.NAME);
         this.isFva = false; // Set the default value
 
         // Here we use the JFileChooser to open a window where the user can select a TSV-file with the fluxes
@@ -47,6 +52,7 @@ public class FileChoosing {
     public HashMap<String, Double> makeMap() {
         HashMap<String, Double> tsvMap = new HashMap<>();
         if (chosenFile == null) {
+            logger.warn("No file was selected or file was not read.");
             return tsvMap;
         }
         String line = "";
@@ -69,10 +75,13 @@ public class FileChoosing {
                     headerFound = true;
                     if (Objects.equals(values[1], "flux")){
                         isFva = false;
+                        logger.info("File contains single flux values.");
                     } else if (values.length > 2 && Objects.equals(values[1], "min_flux") && Objects.equals(values[2], "max_flux")) {
                         isFva = true;
+                        logger.info("File contains flux ranges.");
                     }
                     else {
+                        logger.error("File could not be parsed due to incompatible formatting.");
                         return tsvMap;  // Wrong formatting
                     }
                 }

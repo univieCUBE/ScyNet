@@ -8,12 +8,16 @@ import org.cytoscape.model.CyRow;
 import javax.swing.*;
 import java.util.*;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 /**
  * This class is used to fill the new simpler network with nodes from the old network. The nodes from within
  * the exchange-compartment, the nodes for each of the internal compartments and the exchange compartment node are added.
  */
 public class CreateNodes {
 
+    private final Logger logger;
     /**
      * The old original network
      */
@@ -75,6 +79,7 @@ public class CreateNodes {
      * @param newNetwork is the newly created empty network, which will be filled with nodes
      */
     public CreateNodes(CyNetwork oldNetwork, CyNetwork newNetwork) {
+        this.logger = Logger.getLogger(CyUserLog.NAME);
         this.oldNetwork = oldNetwork;
         this.newNetwork = newNetwork;
         this.exchgCompID = getExchgCompID();
@@ -156,6 +161,7 @@ public class CreateNodes {
             // Iterate over all metabolites
             if (node_type != null && Objects.equals(node_type, "parameter") && Objects.equals(cyId, "shared_compartment_id")) {
                 compId = oldNetwork.getDefaultNodeTable().getRow(currentNode.getSUID()).get("shared name", String.class);
+                break;
             }
             if (node_type != null && Objects.equals(node_type, "compartment") && Objects.equals(cyId, "medium")) {
                 compId = "medium";
@@ -163,6 +169,7 @@ public class CreateNodes {
         }
         if (Objects.equals(compId, "")) {
             // Display a warning message that no medium compartment could be found
+            logger.error("No shared exchange compartment could be identified in the network.");
             JFrame frame = new JFrame();
             JOptionPane pane = new JOptionPane(
                     "No shared exchange compartment could be identified in the network.\n" +

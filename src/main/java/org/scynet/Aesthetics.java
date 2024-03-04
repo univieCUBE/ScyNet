@@ -1,5 +1,7 @@
 package org.scynet;
 
+import org.apache.log4j.Logger;
+import org.cytoscape.application.CyUserLog;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
@@ -56,6 +58,7 @@ public class Aesthetics {
      * The boolean defining if the submitted flux map is fva or fba
      */
     private final boolean isFva;
+    private final Logger logger;
     /**
      * Constructs an Aesthetics object using the specified parameters.
      *
@@ -67,6 +70,7 @@ public class Aesthetics {
      */
 
     public Aesthetics(CreateNodes nodes, CyNetwork newNetwork, CyNetworkView newView, boolean showOnlyCrossfeeding, HashMap<String, Double> tsvMap, Boolean isFva) {
+        this.logger = Logger.getLogger(CyUserLog.NAME);
         this.palette = new ArrayList<>();
         Color compNodeColor = new Color(145,191,219, 175);
         Color exchgNodeColor = new Color(223,194,125, 175);
@@ -260,7 +264,7 @@ public class Aesthetics {
      * Identifies and removes all nodes that do not have crossfeeding.
      */
     private void removeSingletons() {
-
+        logger.info("Removing disconnected nodes");
         List<CyNode> allNodes = newNetwork.getNodeList();
         for (CyNode node : allNodes) {
             List<CyEdge> adjacentEdgeList = newNetwork.getAdjacentEdgeList(node, CyEdge.Type.ANY);

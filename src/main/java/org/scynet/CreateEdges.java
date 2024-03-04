@@ -6,12 +6,16 @@ import org.cytoscape.model.CyNode;
 
 import java.util.*;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 /**
  * This class is used to add edges to the newly created network.
  * The edges are added to the corresponding nodes and then their attributes are filled into the EdgeTable.
  */
 public class CreateEdges {
 
+    private final Logger logger;
     /**
      * All nodes from the old network
      */
@@ -77,6 +81,7 @@ public class CreateEdges {
      * @param tsvMap is the map with the flux-values, if one was loaded in
      */
     public CreateEdges(CyNetwork oldNetwork, CyNetwork newNetwork, CreateNodes createNodes, HashMap<String, Double> tsvMap, Boolean isFva) {
+        this.logger = Logger.getLogger(CyUserLog.NAME);
         this.edgeIDs = new ArrayList<>();
         if (tsvMap.isEmpty()) {this.mapAdded = false;}
         this.tsvMap = tsvMap;

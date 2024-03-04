@@ -16,24 +16,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static java.lang.Math.abs;
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
 
 public class ToggleZeroFluxEdgesTask extends AbstractNetworkViewTask {
 
+	private final Logger logger;
 	private CyApplicationManager cyApplicationManager;
 
 	public ToggleZeroFluxEdgesTask(CyNetworkView view, CyApplicationManager cyApplicationManager){
 		super(view);
+		this.logger = Logger.getLogger(CyUserLog.NAME);
 		this.cyApplicationManager = cyApplicationManager;
 	}
 	
 	@Override
 	public void run(final TaskMonitor taskMonitor) {
 		if (cyApplicationManager.getCurrentNetwork() == null) {
+			logger.warn("No network selected. Nothing to do.");
 			return;
 		}
 
 		if (view == null) {
+			logger.warn("No network view available for selected network. Nothing to do.");
 			return;
 		}
 
@@ -60,6 +65,7 @@ public class ToggleZeroFluxEdgesTask extends AbstractNetworkViewTask {
 
 			if (allHidden) {
 				// Task: make 0 flux edges visible (toggle off)
+				logger.info("Making all edges with flux 0 visible.");
 				for (CyEdge newEdge : currentNetwork.getEdgeList()) {
 					Double edgeFlux = currentNetwork.getDefaultEdgeTable().getRow(newEdge.getSUID()).get("flux", Double.class);
 					View<CyEdge> edgeView = view.getEdgeView(newEdge);
@@ -83,6 +89,7 @@ public class ToggleZeroFluxEdgesTask extends AbstractNetworkViewTask {
 				}
 			} else {
 				// Task: hide 0 flux edges
+				logger.info("Hiding all edges with flux 0.");
 				for (CyEdge newEdge : currentNetwork.getEdgeList()) {
 					Double edgeFlux = currentNetwork.getDefaultEdgeTable().getRow(newEdge.getSUID()).get("flux", Double.class);
 					View<CyEdge> edgeView = view.getEdgeView(newEdge);
@@ -97,6 +104,9 @@ public class ToggleZeroFluxEdgesTask extends AbstractNetworkViewTask {
 
 			hideSingletons(currentNetwork);
 
+		}
+		else {
+			logger.error("The selected network is not in ScyNet format.");
 		}
 	}
 

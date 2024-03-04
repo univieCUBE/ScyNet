@@ -15,22 +15,29 @@ import java.util.Set;
 
 import static java.lang.Math.abs;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 public class ToggleEdgeSizeBasedOnFluxTask extends AbstractNetworkViewTask {
 
+	private final Logger logger;
 	private CyApplicationManager cyApplicationManager;
 
 	public ToggleEdgeSizeBasedOnFluxTask(CyNetworkView view, CyApplicationManager cyApplicationManager){
 		super(view);
+		this.logger = Logger.getLogger(CyUserLog.NAME);
 		this.cyApplicationManager = cyApplicationManager;
 	}
 	
 	@Override
 	public void run(final TaskMonitor taskMonitor) {
-		if (cyApplicationManager.getCurrentNetwork() == null){			
+		if (cyApplicationManager.getCurrentNetwork() == null){
+			logger.warn("No network selected. Nothing to do.");
 			return;
 		}
 
 		if(view == null){
+			logger.warn("No network view available for selected network. Nothing to do.");
 			return;
 		}
 
@@ -65,10 +72,14 @@ public class ToggleEdgeSizeBasedOnFluxTask extends AbstractNetworkViewTask {
 			}
 
 			// No flux values given: nothing to do
-			if (allFluxNull) {return;}
+			if (allFluxNull) {
+				logger.warn("No flux values found. Nothing to do.");
+				return;
+			}
 
 			if (allWidthDefault) {
 				// Task: set edge width relative to flux
+				logger.info("Setting edge widths relative to flux.");
 				Double scalingFactor = (maxEdgeWidth - minEdgeWidth) / maxFlux;
 				for (CyEdge newEdge : currentNetwork.getEdgeList()) {
 					Double edgeFlux = currentNetwork.getDefaultEdgeTable().getRow(newEdge.getSUID()).get("flux", Double.class);
@@ -90,6 +101,7 @@ public class ToggleEdgeSizeBasedOnFluxTask extends AbstractNetworkViewTask {
 			}
 			else {
 				// Task: set edge width to default (toggle off)
+				logger.info("Setting edge widths to default.");
 				for (CyEdge newEdge : currentNetwork.getEdgeList()) {
 					View<CyEdge> edgeView = view.getEdgeView(newEdge);
 					if (edgeView == null) {
@@ -98,6 +110,9 @@ public class ToggleEdgeSizeBasedOnFluxTask extends AbstractNetworkViewTask {
 					edgeView.setLockedValue(BasicVisualLexicon.EDGE_WIDTH, defaultEdgeWidth);
 				}
 			}
+		}
+		else {
+			logger.error("The selected network is not in ScyNet format.");
 		}
 
 //

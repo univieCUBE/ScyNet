@@ -19,11 +19,13 @@ import javax.swing.*;
 import java.io.*;
 import java.util.*;
 
+import org.cytoscape.application.CyUserLog;
+import org.apache.log4j.Logger;
+
 /**
  * A task-class which executes all the needed steps to create a new network-view.
  */
 public class CreateNetworkViewTask extends AbstractNetworkTask {
-
 	/**
 	 * The factory for creating networks
 	 */
@@ -65,6 +67,8 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 	 */
 	private boolean isFva;
 
+	private final Logger logger;
+
 	/**
 	 * A task-class which executes all the needed steps to create a new network-view.
 	 * @param cyNetworkNaming the naming service for networks in Cytoscape
@@ -89,11 +93,14 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 		this.tsvMap = tsvMap;
 		this.isFva = isFva;
 		this.showOnlyCrossfeeding = showOnlyCrossfeeding;
+		this.logger = Logger.getLogger(CyUserLog.NAME);
 	}
 
 	@Override
 	public void run(TaskMonitor monitor) throws FileNotFoundException {
 		if (currentNetwork == null) {
+			logger.error("No network selected.\n" +
+					"Please select a network created or imported by Cy3sbml.");
 			// Display a warning message that the network is not in the correct format
 			JFrame frame = new JFrame();
 			JOptionPane pane = new JOptionPane(
@@ -115,6 +122,8 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 		monitor.showMessage(TaskMonitor.Level.INFO, "Starting network simplification");
 
 		if (!(columnNames.contains("sbml type") && columnNames.contains("sbml compartment"))) {
+			logger.error("The selected network is not in Cy3sbml format.\n" +
+					"Please select a network created or imported by Cy3sbml.");
 			// Display a warning message that the network is not in the correct format
 			JFrame frame = new JFrame();
 			JOptionPane pane = new JOptionPane(
@@ -178,6 +187,7 @@ public class CreateNetworkViewTask extends AbstractNetworkTask {
 		// Here the color/size/label etc. of the Nodes and Edges is changed
 		monitor.setProgress(0.7d);
 		monitor.showMessage(TaskMonitor.Level.INFO, "Styling nodes and edges");
+		logger.info("Styling nodes and edges");
 
 		Aesthetics aesthetics = new Aesthetics(createNodes, newNetwork, myView, showOnlyCrossfeeding, tsvMap, isFva);
 
