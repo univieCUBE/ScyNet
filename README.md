@@ -13,6 +13,7 @@ Please make sure that the following requirements are installed
 ## Installation ##
 ScyNet is available in the [Cytoscape App Store](https://apps.cytoscape.org/apps/scynet). It can be installed within Cytoscape by going to `Apps -> App Manager` and then `search` for `ScyNet`. Once found, select ScyNet and click `install`.
 ## Basic usage ##
+For more detailed information and examples, visit the [ScyNet wiki](https://github.com/univieCUBE/ScyNet/wiki)!
 ### Loading a Model ###
 Import the input community metabolic model with the [cy3sbml](https://apps.cytoscape.org/apps/cy3sbml) app (see requirements). This can be done by going to `File -> Import -> Network from file` and then selecting the community metabolic model SBML file. Please be patient when loading models, especially larger models (>10 members). This process can take a couple of minutes, depending on your hardware.
 ### Model Specifications ###
