@@ -43,4 +43,4 @@ Also flux ranges can be visualized with ScyNet. For doing so, a tab separated fi
 
 
 ## Citing ScyNet ##
-At the present moment we are still working on the final stages of the manuscript. Once it is made public, a citation note will be included at this place.
+Michael Predl, Kilian Gandolf, Michael Hofer, Thomas Rattei, ScyNet: Visualising interactions in community metabolic models, Bioinformatics Advances, 2024;, vbae104, [https://doi.org/10.1093/bioadv/vbae104](https://doi.org/10.1093/bioadv/vbae104)
